@@ -1,0 +1,6 @@
+{
+  "name": "DolapModa - İkinci El Pazaryeri",
+  "description": "iOS ve Android uyumlu, alıcı ve satıcılar için ikinci el kıyafet, ayakkabı, çanta ve aksesuar pazaryeri uygulaması.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
