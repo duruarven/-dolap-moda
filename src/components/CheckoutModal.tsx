@@ -38,7 +38,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ product, onClose }
             </div>
             <div>
               <h3 className="font-bold text-slate-800 text-sm">Güvenli Satın Alım</h3>
-              <p className="text-[11px] text-emerald-600 font-semibold">%100 DolapModa Koruma Havuz Hesabı</p>
+              <p className="text-[11px] text-emerald-600 font-semibold">%100 CepteModa Koruma Havuz Hesabı</p>
             </div>
           </div>
           <button id="close-checkout-modal" onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg">

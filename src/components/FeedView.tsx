@@ -92,7 +92,7 @@ export const FeedView: React.FC = () => {
               Sınırlı Süre
             </span>
             <h3 className="text-base font-bold leading-tight">Tüm Siparişlerde ₺0 Kargo Bedava!</h3>
-            <p className="text-xs text-rose-100">DolapModa güvencesiyle ilk siparişine kargo ücreti ödeme.</p>
+            <p className="text-xs text-rose-100">CepteModa güvencesiyle ilk siparişine kargo ücreti ödeme.</p>
           </div>
           <Truck className="w-16 h-16 text-white/20 shrink-0 transform group-hover:scale-110 transition-transform" />
         </div>

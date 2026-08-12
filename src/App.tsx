@@ -103,9 +103,9 @@ const MainAppContent: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold text-xs">
-              DM
+              CM
             </div>
-            <span className="font-bold text-slate-200">DolapModa • İkinci El Moda Pazaryeri</span>
+            <span className="font-bold text-slate-200">CepteModa • İkinci El Moda Pazaryeri</span>
           </div>
           <p className="text-center sm:text-right text-slate-400">
             iOS & Android Uyumlu Alıcı & Satıcı Pazaryeri Uygulaması © 2026

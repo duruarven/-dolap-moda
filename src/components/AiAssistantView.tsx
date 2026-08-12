@@ -18,11 +18,11 @@ export const AiAssistantView: React.FC = () => {
     {
       id: '1',
       sender: 'ai',
-      text: 'Merhaba! Ben DolapModa Yapay Zeka Moda & Pazarlık Asistanıyım. ✨\n\nİkinci el ürün seçimi, kombin önerileri, fiyatta ne kadar pazarlık yapabileceğin veya ilan açıklaması yazma konusunda sana yardımcı olabilirim.',
+      text: 'Merhaba! Ben CepteModa Yapay Zeka Moda & Pazarlık Asistanıyım. ✨\n\nİkinci el ürün seçimi, kombin önerileri, fiyatta ne kadar pazarlık yapabileceğin veya ilan açıklaması yazma konusunda sana yardımcı olabilirim.',
       quickSuggestions: [
         'Bu ayakkabı hangi kombinle giyilir?',
         'İkinci el ürüne teklif verirken nelere dikkat etmeliyim?',
-        'DolapModa Alıcı Güvencesi nasıl çalışır?'
+        'CepteModa Alıcı Güvencesi nasıl çalışır?'
       ]
     }
   ]);
@@ -88,7 +88,7 @@ export const AiAssistantView: React.FC = () => {
         </div>
         <div>
           <h1 className="text-base font-bold flex items-center gap-1.5">
-            <span>DolapModa AI Moda Asistanı</span>
+            <span>CepteModa AI Moda Asistanı</span>
             <span className="bg-amber-400 text-slate-950 text-[9px] font-extrabold px-2 py-0.2 rounded-full">
               GEMINI 2.5
             </span>

@@ -25,7 +25,7 @@ async function startServer() {
 
   // Health check API
   app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', app: 'DolapModa API' });
+    res.json({ status: 'ok', app: 'CepteModa API' });
   });
 
   // API Route: AI Product Analysis (Auto title, category, brand, condition, description, suggested price)
@@ -98,8 +98,8 @@ Sadece geçerli bir JSON yanıtı döndür:
       const { userMessage, contextProduct } = req.body;
       const ai = getAi();
 
-      const systemPrompt = `Sen DolapModa ikince el moda platformunun akıllı moda asistanısın.
-Adın: "DolapModa AI Asistanı".
+      const systemPrompt = `Sen CepteModa ikinci el moda platformunun akıllı moda asistanısın.
+Adın: "CepteModa AI Asistanı".
 Amacın: Kullanıcılara ürün seçimi, kombin önerileri, pazarlık ve teklif verme stratejisi, kargo süreci ve alıcı güvencesi hakkında Türkçe profesyonel ve samimi bilgi vermektir.
 
 İncelenen Ürün Detayı (Varsa):
@@ -150,7 +150,7 @@ JSON Formatı:
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`DolapModa server listening on http://localhost:${PORT}`);
+    console.log(`CepteModa server listening on http://localhost:${PORT}`);
   });
 }
 

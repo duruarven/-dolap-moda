@@ -13,7 +13,9 @@ import {
   ChevronDown,
   Check,
   ShieldCheck,
-  PackageCheck
+  PackageCheck,
+  Wallet,
+  Tag
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -46,7 +48,7 @@ export const Navbar: React.FC = () => {
             <ShieldCheck className="w-3 h-3 text-rose-400" /> %100 Alıcı & Satıcı Güvencesi
           </span>
           <span className="hidden sm:inline text-slate-400">|</span>
-          <span className="hidden sm:inline text-slate-300 font-medium">Dolap & Gardrops Tipi İkinci El Pazaryeri</span>
+          <span className="hidden sm:inline text-slate-300 font-medium">CepteModa Bütçe Dostu İkinci El Pazaryeri</span>
         </div>
 
         <div className="flex items-center gap-4">
@@ -136,17 +138,20 @@ export const Navbar: React.FC = () => {
         <div 
           id="nav-logo"
           onClick={() => setViewMode('feed')}
-          className="flex items-center gap-2 cursor-pointer group"
+          className="flex items-center gap-2.5 cursor-pointer group shrink-0"
         >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-600 via-pink-500 to-rose-400 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-            <ShoppingBag className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-600 via-pink-600 to-rose-500 flex items-center justify-center text-white shadow-md shadow-rose-200 group-hover:scale-105 transition-all relative">
+            <Wallet className="w-5 h-5 relative z-10" />
+            <span className="absolute -top-1 -right-1 bg-amber-400 text-slate-950 p-0.5 rounded-full ring-2 ring-white shadow-xs">
+              <Tag className="w-2.5 h-2.5" />
+            </span>
           </div>
           <div>
-            <span className="text-xl font-black tracking-tight bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 bg-clip-text text-transparent">
-              Dolap<span className="text-slate-800 font-bold">Moda</span>
+            <span className="text-xl font-black tracking-tight text-slate-900 group-hover:text-rose-600 transition-colors block leading-none">
+              Cepte<span className="text-rose-600">Moda</span>
             </span>
-            <span className="block text-[9px] font-semibold tracking-wider text-rose-500 uppercase leading-none">
-              İkinci El Pazaryeri
+            <span className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-1">
+              Bütçe Dostu İkinci El
             </span>
           </div>
         </div>
@@ -160,7 +165,7 @@ export const Navbar: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Marka, ürün, dolap veya kategori ara (örn: Zara, Nike Dunk, Elbise)..."
+              placeholder="Marka, ürün veya kategori ara (örn: Zara, Nike Dunk, Elbise)..."
               className="w-full pl-9 pr-8 py-2 bg-slate-100 hover:bg-slate-50 focus:bg-white text-slate-800 text-xs rounded-full border border-slate-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none transition-all placeholder:text-slate-400"
             />
             {searchQuery && (

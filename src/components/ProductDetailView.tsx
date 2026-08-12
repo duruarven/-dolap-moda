@@ -56,7 +56,7 @@ export const ProductDetailView: React.FC = () => {
     const shareUrl = window.location.href;
     const shareData = {
       title: selectedProduct.title,
-      text: `${selectedProduct.title} - DolapModa'da ₺${selectedProduct.price} fiyatıyla satışta!`,
+      text: `${selectedProduct.title} - CepteModa'da ₺${selectedProduct.price} fiyatıyla satışta!`,
       url: shareUrl
     };
 
@@ -390,7 +390,7 @@ export const ProductDetailView: React.FC = () => {
                   <div className="flex items-start gap-2 bg-white/80 p-2.5 rounded-xl border border-amber-200/50">
                     <Lock className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                     <div>
-                      <strong className="block text-slate-900 font-bold text-[11px]">DolapModa Havuz Hesabı Kullanın</strong>
+                      <strong className="block text-slate-900 font-bold text-[11px]">CepteModa Havuz Hesabı Kullanın</strong>
                       <p className="text-[10px] text-slate-600 leading-normal">
                         Ödemenizi asla harici IBAN veya kişisel hesaba yapmayın. Paranız ürün elinize ulaşıp onay verene kadar havuz hesabında güvendedir.
                       </p>
