@@ -30,7 +30,7 @@ interface AppContextType {
   openAuthModal: (mode?: 'login' | 'register') => void;
   closeAuthModal: () => void;
   login: (email: string, password: string) => boolean;
-  register: (fullName: string, email: string, password: string) => void;
+  register: (fullName: string, email: string, password: string) => Promise<void>;
   logout: () => void;
 
   // Legal Modal
@@ -103,7 +103,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [users, setUsers] = useState<UserProfile[]>(MOCK_USERS);
   const [currentUser, setCurrentUser] = useState<UserProfile>(MOCK_USERS[0]);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // Requires login before publishing or seller actions
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authInitialMode, setAuthInitialMode] = useState<'login' | 'register'>('login');
 
@@ -118,7 +118,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const cleanInput = emailOrUser.toLowerCase().trim();
     if (!cleanInput) return false;
 
-    // Find user by exact email OR exact username
     const matchedUser = users.find(u => 
       (u.email && u.email.toLowerCase() === cleanInput) ||
       u.username.toLowerCase() === cleanInput ||
@@ -131,7 +130,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addNotification('Hoş Geldiniz! 👋', `${matchedUser.name} hesabınıza başarıyla giriş yapıldı.`, 'success');
       return true;
     } else {
-      // User is not found in existing accounts
       addNotification(
         'Hesap Bulunamadı! ⚠️', 
         'Bu e-posta veya kullanıcı adıyla kayıtlı bir hesap bulunamadı. Lütfen "Üye Ol" sekmesinden yeni hesap oluşturunuz.', 
@@ -141,14 +139,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const register = (fullName: string, email: string, pass: string) => {
+  // Gerçek Render Backend İstekli Güncel Register Fonksiyonu
+  const register = async (fullName: string, email: string, pass: string) => {
     const cleanName = fullName.trim();
     const cleanEmail = email.toLowerCase().trim();
     if (!cleanName || !cleanEmail) return;
 
     const usernameHandle = `@${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
     
-    // Check if account already exists
     const existing = users.find(u => 
       (u.email && u.email.toLowerCase() === cleanEmail) ||
       u.username.toLowerCase() === usernameHandle
@@ -161,6 +159,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         'warning'
       );
       return;
+    }
+
+    // Render Backend'e E-posta Doğrulama İsteği
+    try {
+      addNotification('E-posta Gönderiliyor... 📩', 'Doğrulama kodu gönderiliyor, lütfen bekleyin.', 'info');
+
+      const response = await fetch('https://dolap-moda-backed.onrender.com/api/auth/send-verification-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: cleanEmail,
+          fullName: cleanName
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        addNotification('Kod Gönderildi! 📧', `${cleanEmail} adresine doğrulama kodunuz iletildi.`, 'success');
+      } else {
+        addNotification('Açıklama ℹ️', data.error || 'E-posta servisi yanıt verdi.', 'info');
+      }
+    } catch (err) {
+      console.error("Backend Bağlantı Hatası:", err);
     }
 
     const newUser: UserProfile = {
@@ -187,7 +209,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);
     setIsLoggedIn(true);
-    addNotification('Aramıza Hoş Geldiniz! 🎉', `${cleanName} adıyla yeni hesabınız başarıyla oluşturuldu.`, 'success');
+    addNotification('Aramıza Hoş Geldiniz! 🎉', `${cleanName} adıyla yeni hesabınız oluşturuldu.`, 'success');
   };
 
   const logout = () => {
@@ -301,7 +323,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const exists = prev.includes(productId);
       const updated = exists ? prev.filter(id => id !== productId) : [...prev, productId];
       
-      // Update favorite count on product
       setProducts(prods => prods.map(p => {
         if (p.id === productId) {
           return {
@@ -349,7 +370,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setMessages(prev => [...prev, newMessage]);
 
-    // Update last message in conversation
     setConversations(convs => convs.map(c => {
       if (c.id === activeConversation.id) {
         return {
@@ -361,7 +381,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return c;
     }));
 
-    // Auto simulated response after 2 seconds if chatting with seller
     if (activeConversation.sellerId !== currentUser.id) {
       setTimeout(() => {
         const autoReply: Message = {
@@ -384,7 +403,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const prod = products.find(p => p.id === productId);
     if (!prod) return;
 
-    // Find or create conversation
     let conv = conversations.find(c => c.productId === productId && c.buyerId === currentUser.id);
     if (!conv) {
       conv = {
@@ -430,7 +448,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Create Order from Checkout
   const createOrder = (product: Product, address: string, courier: string): Order => {
     const serviceFee = 9;
     const shippingFee = product.shippingType === 'Kargo Bedava' ? 0 : 30;
@@ -463,8 +480,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setOrders(prev => [newOrder, ...prev]);
-
-    // Mark product as reserved / sold
     setProducts(prev => prev.map(p => p.id === product.id ? { ...p, status: 'reserved' } : p));
 
     addNotification('Sipariş Alındı! 🛍️', `${product.title} için siparişiniz başarıyla oluşturuldu.`, 'success');
@@ -483,12 +498,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return o;
     }));
 
-    // Add money to seller balance
     const targetOrder = orders.find(o => o.id === orderId);
     if (targetOrder) {
       setCurrentUser(prev => ({
         ...prev,
-        walletBalance: prev.walletBalance + targetOrder.itemPrice * 0.9 // 10% platform fee
+        walletBalance: prev.walletBalance + targetOrder.itemPrice * 0.9
       }));
     }
 
@@ -517,8 +531,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setReviews(prev => [newReview, ...prev]);
-
-    // Attach review to target order
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, review: newReview } : o));
 
     addNotification('Değerlendirmeniz Yayınlandı! ⭐', 'Satıcı ve ürün için puanlama/yorumunuz eklendi.', 'success');
@@ -563,7 +575,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setProducts(prev => [newProduct, ...prev]);
-    // Increment active listings count
     setCurrentUser(prev => ({ ...prev, activeListingsCount: prev.activeListingsCount + 1 }));
 
     addNotification('Ürün Yayınlandı! 👗', 'Ürününüz DolapModa pazarında başarıyla sergileniyor.', 'success');
