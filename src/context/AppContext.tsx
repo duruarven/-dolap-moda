@@ -28,7 +28,7 @@ interface AppContextType {
   authInitialMode: 'login' | 'register';
   openAuthModal: (mode?: 'login' | 'register') => void;
   closeAuthModal: () => void;
-  login: (email: string, password: string) => void;
+  login: (email: string, password: string) => boolean;
   register: (fullName: string, email: string, password: string) => void;
   logout: () => void;
 
@@ -111,10 +111,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
-  const login = (email: string, pass: string) => {
+  const login = (email: string, pass: string): boolean => {
     const cleanEmail = email.toLowerCase().trim();
     const userPrefix = cleanEmail.split('@')[0];
+    
+    // Find user by exact email, username, or prefix match in registered users
     const matchedUser = users.find(u => 
+      u.username.toLowerCase() === `@${userPrefix}` ||
       u.username.toLowerCase().includes(userPrefix) || 
       u.name.toLowerCase().includes(userPrefix)
     );
@@ -123,32 +126,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCurrentUser(matchedUser);
       setIsLoggedIn(true);
       addNotification('Hoş Geldiniz! 👋', `${matchedUser.name} hesabınıza başarıyla giriş yapıldı.`, 'success');
+      return true;
     } else {
-      // Create user profile for this login
-      const formattedName = userPrefix.charAt(0).toUpperCase() + userPrefix.slice(1);
-      const newUserProfile: UserProfile = {
-        id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-        name: formattedName,
-        username: `@${userPrefix}`,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userPrefix)}`,
-        bio: 'CepteModa üyesi',
-        rating: 5.0,
-        totalSales: 0,
-        activeListingsCount: 0,
-        followersCount: 0,
-        followingCount: 0,
-        walletBalance: 0,
-        pendingBalance: 0,
-        iban: '',
-        isSuperSeller: false,
-        isSeller: false,
-        shopName: '',
-        city: 'İstanbul'
-      };
-      setUsers(prev => [...prev, newUserProfile]);
-      setCurrentUser(newUserProfile);
-      setIsLoggedIn(true);
-      addNotification('Giriş Yapıldı 👋', `${newUserProfile.name} hesabınıza giriş yapıldı.`, 'success');
+      // User is not found in existing accounts
+      addNotification(
+        'Hesap Bulunamadı! ⚠️', 
+        'Bu e-posta adresiyle kayıtlı bir hesap bulunamadı. Lütfen "Üye Ol" sekmesinden yeni hesap oluşturunuz.', 
+        'warning'
+      );
+      return false;
     }
   };
 

@@ -93,8 +93,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    login(email, password);
-    onClose();
+    const success = login(email, password);
+    if (success) {
+      onClose();
+    }
   };
 
   // Dispatch email sending via server API route (/api/auth/send-verification-email)
