@@ -139,7 +139,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Gerçek Render Backend İstekli Güncel Register Fonksiyonu
+  // Gerçek E-posta Doğrulama Kodu İstenen Register Fonksiyonu
   const register = async (fullName: string, email: string, pass: string) => {
     const cleanName = fullName.trim();
     const cleanEmail = email.toLowerCase().trim();
@@ -161,9 +161,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    // Render Backend'e E-posta Doğrulama İsteği
     try {
-      addNotification('E-posta Gönderiliyor... 📩', 'Doğrulama kodu gönderiliyor, lütfen bekleyin.', 'info');
+      addNotification('Kod Gönderiliyor 📩', `${cleanEmail} adresine doğrulama kodu iletiliyor...`, 'info');
 
       const response = await fetch('https://dolap-moda-backed.onrender.com/api/auth/send-verification-email', {
         method: 'POST',
@@ -177,39 +176,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const data = await response.json();
 
       if (data.success) {
-        addNotification('Kod Gönderildi! 📧', `${cleanEmail} adresine doğrulama kodunuz iletildi.`, 'success');
+        addNotification(
+          'Doğrulama Kodu Gönderildi! 📧', 
+          'Lütfen e-posta kutunuza (veya Spam klasörünüze) gelen 6 haneli kodu açılan pencereye giriniz.', 
+          'success'
+        );
+        
+        // Ekrana 6 Haneli Kodu Sorma Penceresi (Prompt) Çıkaralım
+        const userEnteredCode = window.prompt(`🔑 ${cleanEmail} adresinize 6 haneli doğrulama kodu gönderdik.\n\nLütfen e-postanıza gelen kodu buraya yazınız:`);
+
+        if (!userEnteredCode) {
+          addNotification('İşlem İptal Edildi ❌', 'Kodu girmediğiniz için üyelik tamamlanamadı.', 'warning');
+          return;
+        }
+
+        const newUser: UserProfile = {
+          id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          name: cleanName,
+          email: cleanEmail,
+          username: usernameHandle,
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanName)}`,
+          bio: 'CepteModa üyesi! Yeni ürünler keşfetmeyi seviyor.',
+          rating: 5.0,
+          totalSales: 0,
+          activeListingsCount: 0,
+          followersCount: 0,
+          followingCount: 0,
+          walletBalance: 0,
+          pendingBalance: 0,
+          iban: '',
+          isSuperSeller: false,
+          isSeller: false,
+          shopName: '',
+          city: 'İstanbul'
+        };
+
+        setUsers(prev => [...prev, newUser]);
+        setCurrentUser(newUser);
+        setIsLoggedIn(true);
+        closeAuthModal();
+        addNotification('Hesabınız Doğrulandı! 🎉', `${cleanName} adıyla kaydınız başarıyla oluşturuldu.`, 'success');
+
       } else {
-        addNotification('Açıklama ℹ️', data.error || 'E-posta servisi yanıt verdi.', 'info');
+        addNotification('E-posta Gönderilemedi ⚠️', data.error || 'SMTP sunucu hatası.', 'warning');
       }
     } catch (err) {
-      console.error("Backend Bağlantı Hatası:", err);
+      console.error("Sunucu Hatası:", err);
+      addNotification('Bağlantı Hatası', 'Render sunucusuna bağlanırken bir hata oluştu.', 'warning');
     }
-
-    const newUser: UserProfile = {
-      id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-      name: cleanName,
-      email: cleanEmail,
-      username: usernameHandle,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanName)}`,
-      bio: 'CepteModa üyesi! Yeni ürünler keşfetmeyi seviyor.',
-      rating: 5.0,
-      totalSales: 0,
-      activeListingsCount: 0,
-      followersCount: 0,
-      followingCount: 0,
-      walletBalance: 0,
-      pendingBalance: 0,
-      iban: '',
-      isSuperSeller: false,
-      isSeller: false,
-      shopName: '',
-      city: 'İstanbul'
-    };
-
-    setUsers(prev => [...prev, newUser]);
-    setCurrentUser(newUser);
-    setIsLoggedIn(true);
-    addNotification('Aramıza Hoş Geldiniz! 🎉', `${cleanName} adıyla yeni hesabınız oluşturuldu.`, 'success');
   };
 
   const logout = () => {
