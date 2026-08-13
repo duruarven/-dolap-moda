@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   X, 
@@ -36,6 +36,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [rememberMe, setRememberMe] = useState(true);
   const [agreeTerms, setAgreeTerms] = useState(true);
 
+  // Sync mode and clear inputs when modal opens or initialMode changes
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode || 'login');
+      setEmail('');
+      setPassword('');
+      setFullName('');
+      setPhone('');
+    }
+  }, [isOpen, initialMode]);
+
   if (!isOpen) return null;
 
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -65,8 +76,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   const handleSocialLogin = (provider: string) => {
-    addNotification('Sosyal Giriş Yapıldı', `${provider} hesabınız ile giriş yapıldı.`, 'success');
-    login(`${provider.toLowerCase()}@user.com`, '123456');
+    const socialName = `${provider} Üyesi`;
+    const socialEmail = `${provider.toLowerCase().replace(/\s+/g, '')}_user@gmail.com`;
+    register(socialName, socialEmail, 'social_auth_pwd');
+    addNotification('Sosyal Giriş Yapıldı', `${provider} hesabınız ile başarıyla giriş yapıldı.`, 'success');
     onClose();
   };
 

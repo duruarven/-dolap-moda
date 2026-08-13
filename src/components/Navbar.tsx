@@ -65,7 +65,7 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-rose-100 shadow-xs">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-rose-100 shadow-xs">
       {/* Top Header Bar */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-3">
         {/* Logo & Mobile Menu Toggle */}
@@ -314,7 +314,7 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Category Drawer Menu Modal */}
       {showMobileMenu && (
-        <div className="sm:hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex justify-start animate-in fade-in duration-200">
+        <div className="sm:hidden fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-xs flex justify-start animate-in fade-in duration-200">
           <div className="w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col p-4 overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">

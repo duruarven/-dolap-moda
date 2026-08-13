@@ -98,7 +98,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [users] = useState<UserProfile[]>(MOCK_USERS);
+  const [users, setUsers] = useState<UserProfile[]>(MOCK_USERS);
   const [currentUser, setCurrentUser] = useState<UserProfile>(MOCK_USERS[0]);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // Requires login before publishing or seller actions
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
@@ -112,19 +112,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
   const login = (email: string, pass: string) => {
-    const matchedUser = users.find(u => u.username.toLowerCase().includes(email.split('@')[0].toLowerCase())) || MOCK_USERS[0];
-    setCurrentUser(matchedUser);
-    setIsLoggedIn(true);
-    addNotification('Hoş Geldiniz! 👋', `${matchedUser.name} hesabınıza başarıyla giriş yapıldı.`, 'success');
+    const cleanEmail = email.toLowerCase().trim();
+    const userPrefix = cleanEmail.split('@')[0];
+    const matchedUser = users.find(u => 
+      u.username.toLowerCase().includes(userPrefix) || 
+      u.name.toLowerCase().includes(userPrefix)
+    );
+
+    if (matchedUser) {
+      setCurrentUser(matchedUser);
+      setIsLoggedIn(true);
+      addNotification('Hoş Geldiniz! 👋', `${matchedUser.name} hesabınıza başarıyla giriş yapıldı.`, 'success');
+    } else {
+      // Create user profile for this login
+      const formattedName = userPrefix.charAt(0).toUpperCase() + userPrefix.slice(1);
+      const newUserProfile: UserProfile = {
+        id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        name: formattedName,
+        username: `@${userPrefix}`,
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userPrefix)}`,
+        bio: 'CepteModa üyesi',
+        rating: 5.0,
+        totalSales: 0,
+        activeListingsCount: 0,
+        followersCount: 0,
+        followingCount: 0,
+        walletBalance: 0,
+        pendingBalance: 0,
+        iban: '',
+        isSuperSeller: false,
+        isSeller: false,
+        shopName: '',
+        city: 'İstanbul'
+      };
+      setUsers(prev => [...prev, newUserProfile]);
+      setCurrentUser(newUserProfile);
+      setIsLoggedIn(true);
+      addNotification('Giriş Yapıldı 👋', `${newUserProfile.name} hesabınıza giriş yapıldı.`, 'success');
+    }
   };
 
   const register = (fullName: string, email: string, pass: string) => {
+    const cleanName = fullName.trim();
+    const cleanEmail = email.toLowerCase().trim();
+    const usernameHandle = `@${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    
     const newUser: UserProfile = {
-      id: `user_${Date.now()}`,
-      name: fullName,
-      username: `@${fullName.toLowerCase().replace(/\s+/g, '_')}`,
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
-      bio: 'CepteModa yeni üyesi!',
+      id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      name: cleanName,
+      username: usernameHandle,
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanName)}`,
+      bio: 'CepteModa üyesi! Yeni ürünler keşfetmeyi seviyor.',
       rating: 5.0,
       totalSales: 0,
       activeListingsCount: 0,
@@ -138,9 +176,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       shopName: '',
       city: 'İstanbul'
     };
+
+    setUsers(prev => [...prev, newUser]);
     setCurrentUser(newUser);
     setIsLoggedIn(true);
-    addNotification('Aramıza Hoş Geldiniz! 🎉', 'Hesabınız başarıyla oluşturuldu.', 'success');
+    addNotification('Aramıza Hoş Geldiniz! 🎉', `${cleanName} adıyla yeni hesabınız başarıyla oluşturuldu.`, 'success');
   };
 
   const logout = () => {
@@ -229,7 +269,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [notifications, setNotifications] = useState<NotificationToast[]>([]);
 
   const addNotification = (title: string, message: string, type: 'success' | 'info' | 'warning' = 'info') => {
-    const id = Date.now().toString();
+    const id = `notif_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     setNotifications(prev => [...prev, { id, title, message, type }]);
     setTimeout(() => {
       removeNotification(id);
@@ -288,7 +328,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!activeConversation) return;
 
     const newMessage: Message = {
-      id: `msg_${Date.now()}`,
+      id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       conversationId: activeConversation.id,
       senderId: currentUser.id,
       senderName: currentUser.name,
@@ -317,7 +357,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (activeConversation.sellerId !== currentUser.id) {
       setTimeout(() => {
         const autoReply: Message = {
-          id: `msg_${Date.now() + 1}`,
+          id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
           conversationId: activeConversation.id,
           senderId: activeConversation.sellerId,
           senderName: activeConversation.sellerName,
@@ -340,7 +380,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let conv = conversations.find(c => c.productId === productId && c.buyerId === currentUser.id);
     if (!conv) {
       conv = {
-        id: `conv_${Date.now()}`,
+        id: `conv_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         productId: prod.id,
         productTitle: prod.title,
         productImage: prod.images[0],
@@ -389,7 +429,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const totalPrice = product.price + serviceFee + shippingFee;
 
     const newOrder: Order = {
-      id: `ord_${Date.now()}`,
+      id: `ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       orderNumber: `DLP-${Math.floor(1000000 + Math.random() * 9000000)}`,
       productId: product.id,
       product,
@@ -462,7 +502,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const newProduct: Product = {
       ...productData,
-      id: `prod_${Date.now()}`,
+      id: `prod_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       seller: {
         id: currentUser.id,
         name: currentUser.name,

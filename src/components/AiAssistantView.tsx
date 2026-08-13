@@ -32,7 +32,7 @@ export const AiAssistantView: React.FC = () => {
     if (!textToSend.trim()) return;
 
     const userMsg: ChatMessage = {
-      id: Date.now().toString(),
+      id: `ai_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       sender: 'user',
       text: textToSend
     };
@@ -59,7 +59,7 @@ export const AiAssistantView: React.FC = () => {
       const resData = await response.json();
       if (resData.success && resData.data) {
         setMessages(prev => [...prev, {
-          id: (Date.now() + 1).toString(),
+          id: `ai_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
           sender: 'ai',
           text: resData.data.reply,
           quickSuggestions: resData.data.quickSuggestions
@@ -69,7 +69,7 @@ export const AiAssistantView: React.FC = () => {
       }
     } catch (err: any) {
       setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
+        id: `ai_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         sender: 'ai',
         text: 'Size şu an cevap verirken bir aksaklık oluştu. Genel tavsiyem: Dolap ve Gardrops gibi platformlarda satıcı puanı yüksek olan ve detaylı fotoğraf yükleyen ilanları tercih etmenizdir.',
         quickSuggestions: ['Başka ne sorabilirim?']

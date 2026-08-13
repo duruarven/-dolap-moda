@@ -94,7 +94,7 @@ export const ProductDetailView: React.FC = () => {
     e.preventDefault();
     if (!commentText.trim()) return;
     setComments(prev => [...prev, {
-      id: Date.now().toString(),
+      id: `comment_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       user: currentUser.name,
       text: commentText,
       date: 'Şimdi'
@@ -107,7 +107,7 @@ export const ProductDetailView: React.FC = () => {
     let conv = conversations.find(c => c.productId === selectedProduct.id && c.buyerId === currentUser.id);
     if (!conv) {
       conv = {
-        id: `conv_${Date.now()}`,
+        id: `conv_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         productId: selectedProduct.id,
         productTitle: selectedProduct.title,
         productImage: selectedProduct.images[0],
