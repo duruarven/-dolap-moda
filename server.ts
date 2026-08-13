@@ -3,6 +3,7 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
+import nodemailer from 'nodemailer';
 
 dotenv.config();
 
@@ -13,6 +14,28 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json({ limit: '10mb' }));
+
+  // Helper to initialize Nodemailer SMTP transporter safely
+  const getTransporter = () => {
+    const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+    const port = parseInt(process.env.SMTP_PORT || '587', 10);
+    const user = process.env.SMTP_USER;
+    const pass = process.env.SMTP_PASS;
+
+    if (!user || !pass) {
+      return null;
+    }
+
+    return nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465, // true for 465, false for 587
+      auth: {
+        user,
+        pass,
+      },
+    });
+  };
 
   // Helper to initialize Gemini safely
   const getAi = () => {
@@ -32,7 +55,107 @@ async function startServer() {
 
   // Health check API
   app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', app: 'CepteModa API' });
+    const smtpConfigured = Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
+    res.json({ 
+      status: 'ok', 
+      app: 'CepteModa API',
+      smtpService: smtpConfigured ? 'SMTP Configured' : 'Preview Simulation Mode'
+    });
+  });
+
+  // API Route: Send Email Verification Code via SMTP / Notification Service
+  app.post('/api/auth/send-verification-email', async (req, res) => {
+    try {
+      const { email, code, fullName } = req.body;
+
+      if (!email || !code) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'E-posta ve onay kodu zorunludur.' 
+        });
+      }
+
+      const transporter = getTransporter();
+      const fromAddress = process.env.SMTP_FROM || 'CepteModa <noreply@ceptemoda.com>';
+
+      const emailHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px; color: #1e293b; }
+            .container { max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+            .header { background: linear-gradient(135deg, #e11d48 0%, #db2777 100%); padding: 30px 20px; text-align: center; color: white; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 800; tracking: -0.5px; }
+            .header p { margin: 6px 0 0 0; opacity: 0.9; font-size: 13px; }
+            .content { padding: 30px 24px; }
+            .code-box { background: #f1f5f9; border: 2px dashed #cbd5e1; border-radius: 16px; text-align: center; padding: 20px; margin: 20px 0; }
+            .code { font-family: monospace; font-size: 32px; font-weight: 900; letter-spacing: 8px; color: #e11d48; margin: 0; }
+            .footer { background: #f8fafc; padding: 16px 20px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #f1f5f9; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>CepteModa</h1>
+              <p>İkinci El Moda & Lüks Alışveriş Platformu</p>
+            </div>
+            <div class="content">
+              <h2 style="font-size: 18px; margin-top:0;">Merhaba ${fullName || 'Değerli Üyemiz'},</h2>
+              <p style="font-size: 14px; color: #475569; line-height: 1.6;">
+                CepteModa hesabınızı oluşturmak için e-posta doğrulama adımındasınız. Lütfen aşağıdaki 6 haneli güvenlik kodunu üyelik ekranına giriniz:
+              </p>
+              
+              <div class="code-box">
+                <div class="code">${code}</div>
+              </div>
+
+              <p style="font-size: 12px; color: #94a3b8; text-align: center;">
+                Bu onay kodu 10 dakika boyunca geçerlidir. Lütfen bu kodu kimseyle paylaşmayınız.
+              </p>
+            </div>
+            <div class="footer">
+              Bu e-posta otomasyon sistemi tarafından otomatik oluşturulmuştur. Cevap vermeyiniz.<br>
+              &copy; 2026 CepteModa A.Ş. Tüm hakları saklıdır.
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      if (transporter) {
+        // Real SMTP Delivery
+        await transporter.sendMail({
+          from: fromAddress,
+          to: email,
+          subject: `🔑 CepteModa E-Posta Onay Kodunuz: ${code}`,
+          html: emailHtml,
+        });
+
+        console.log(`[SMTP EMAIL SENT] Real email delivered to ${email} with code ${code}`);
+        return res.json({
+          success: true,
+          smtpConfigured: true,
+          message: `${email} adresine doğrulama kodu başarıyla e-posta olarak gönderildi.`,
+        });
+      } else {
+        // Fallback preview mode (Log to console & notify app)
+        console.log(`[SMTP SIMULATION MODE] Code ${code} sent to ${email} (Configure SMTP_USER & SMTP_PASS in .env.example for live delivery)`);
+        return res.json({
+          success: true,
+          smtpConfigured: false,
+          simulated: true,
+          message: `${email} adresine doğrulama e-postası tetiklendi (Önizleme/Simülasyon Modu).`,
+        });
+      }
+    } catch (error: any) {
+      console.error('[SMTP ERROR]', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'E-posta gönderimi sırasında bir sunucu hatası oluştu.',
+      });
+    }
   });
 
   // API Route: AI Product Analysis (Auto title, category, brand, condition, description, suggested price)

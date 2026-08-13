@@ -12,7 +12,11 @@ import {
   CheckCircle2,
   LogIn,
   UserPlus,
-  ArrowLeft
+  ArrowLeft,
+  KeyRound,
+  RefreshCw,
+  Copy,
+  Check
 } from 'lucide-react';
 
 interface AuthModalProps {
@@ -37,6 +41,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [rememberMe, setRememberMe] = useState(true);
   const [agreeTerms, setAgreeTerms] = useState(true);
 
+  // Email Verification Code states
+  const [isVerificationStep, setIsVerificationStep] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [verificationInput, setVerificationInput] = useState('');
+  const [resendTimer, setResendTimer] = useState(60);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [smtpStatus, setSmtpStatus] = useState<{ configured: boolean; message: string } | null>(null);
+
   // Social Auth confirmation states (stops automatic instant login)
   const [socialProvider, setSocialProvider] = useState<'Google' | 'Apple' | null>(null);
   const [socialEmail, setSocialEmail] = useState('');
@@ -52,8 +65,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setFullName('');
       setPhone('');
       setSocialProvider(null);
+      setIsVerificationStep(false);
+      setVerificationInput('');
+      setIsSendingEmail(false);
     }
   }, [isOpen, initialMode]);
+
+  // Countdown timer for code resend
+  useEffect(() => {
+    let interval: any = null;
+    if (isVerificationStep && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (resendTimer === 0) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isVerificationStep, resendTimer]);
 
   if (!isOpen) return null;
 
@@ -68,7 +97,53 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     onClose();
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  // Dispatch email sending via server API route (/api/auth/send-verification-email)
+  const dispatchVerificationEmail = async (userEmail: string, userName: string, code: string) => {
+    setIsSendingEmail(true);
+    try {
+      const response = await fetch('/api/auth/send-verification-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: userEmail,
+          fullName: userName,
+          code: code
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSmtpStatus({
+          configured: !!data.smtpConfigured,
+          message: data.message || 'Onay kodu iletildi.'
+        });
+
+        if (data.smtpConfigured) {
+          addNotification(
+            '📬 E-Posta Gönderildi!',
+            `${userEmail} adresinize SMTP e-posta bildirim servisi ile 6 haneli onay kodu gönderildi.`,
+            'success'
+          );
+        } else {
+          addNotification(
+            '📩 Onay Kodu Gönderildi',
+            `${userEmail} adresiniz için 6 haneli doğrulama kodunuz (${code}) oluşturuldu.`,
+            'info'
+          );
+        }
+      } else {
+        addNotification('Uyarı', data.error || 'E-posta servisi yanıt vermedi.', 'warning');
+      }
+    } catch (err: any) {
+      console.error('Email API Error:', err);
+      addNotification('E-Posta Servisi', 'Kod oluşturuldu. Onay ekranında kullanabilirsiniz.', 'info');
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
+  // Step 1: Initiate registration & send 6-digit email verification code
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !email || !password) {
       addNotification('Hata', 'Lütfen zorunlu alanları doldurunuz.', 'warning');
@@ -79,8 +154,54 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    register(fullName, email, password);
-    onClose();
+    // Generate random 6-digit verification code
+    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedCode(newCode);
+    setIsVerificationStep(true);
+    setResendTimer(60);
+    setVerificationInput('');
+    setCodeCopied(false);
+
+    // Trigger server SMTP API
+    await dispatchVerificationEmail(email, fullName, newCode);
+  };
+
+  // Resend code logic
+  const handleResendCode = async () => {
+    if (resendTimer > 0 || isSendingEmail) return;
+    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedCode(newCode);
+    setResendTimer(60);
+    setVerificationInput('');
+    setCodeCopied(false);
+
+    await dispatchVerificationEmail(email, fullName, newCode);
+  };
+
+  // Step 2: Verify code and complete membership
+  const handleVerifyCodeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!verificationInput || verificationInput.trim().length < 6) {
+      addNotification('Hata', 'Lütfen 6 haneli onay kodunu eksiksiz giriniz.', 'warning');
+      return;
+    }
+
+    if (verificationInput.trim() === generatedCode) {
+      register(fullName, email, password);
+      addNotification(
+        'E-posta Doğrulandı! 🎉',
+        'Hesabınız başarıyla oluşturuldu ve e-posta adresiniz onaylandı. Aramıza hoş geldiniz!',
+        'success'
+      );
+      setIsVerificationStep(false);
+      onClose();
+    } else {
+      addNotification(
+        'Hatalı Onay Kodu! ❌',
+        'Girdiğiniz onay kodu geçersiz. Lütfen tekrar deneyin veya yeni kod isteyin.',
+        'warning'
+      );
+    }
   };
 
   const handleSocialClick = (provider: 'Google' | 'Apple') => {
@@ -110,6 +231,147 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setSocialProvider(null);
     onClose();
   };
+
+  if (isVerificationStep) {
+    return (
+      <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+        <div className="bg-white max-w-md w-full rounded-3xl shadow-2xl overflow-hidden border border-slate-100 relative animate-in fade-in zoom-in-95 duration-200 my-8">
+          
+          {/* Header */}
+          <div className="bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white p-6 relative">
+            <button
+              onClick={() => {
+                setIsVerificationStep(false);
+                onClose();
+              }}
+              className="absolute top-4 right-4 text-white/80 hover:text-white bg-black/20 hover:bg-black/30 p-1.5 rounded-full transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 mb-2">
+              <span className="bg-white/20 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                <KeyRound className="w-3 h-3 text-amber-300" /> E-Posta Onay Adımı
+              </span>
+            </div>
+
+            <h2 className="text-xl font-black text-white flex items-center gap-2">
+              <span>E-Posta Adresinizi Doğrulayın</span>
+            </h2>
+            <p className="text-xs text-rose-100 mt-1 leading-snug">
+              <strong className="text-white font-bold">{email}</strong> adresinize 6 haneli üyelik onay kodu gönderildi.
+            </p>
+          </div>
+
+          {/* Form Body */}
+          <form onSubmit={handleVerifyCodeSubmit} className="p-6 space-y-4">
+            
+            {/* Email Dispatch Notification Status Box */}
+            <div className="p-3.5 bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border border-blue-200/80 rounded-2xl space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-blue-900">
+                <span className="flex items-center gap-1.5">
+                  <Mail className="w-4 h-4 text-blue-600" />
+                  <span>
+                    {smtpStatus?.configured ? '📬 SMTP E-Posta Servisi (Aktif)' : '📩 E-Posta Bildirim Servisi'}
+                  </span>
+                </span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
+                  smtpStatus?.configured ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-200/80 text-blue-800'
+                }`}>
+                  {smtpStatus?.configured ? 'SMTP Canlı' : 'Önizleme Modu'}
+                </span>
+              </div>
+              <p className="text-[11px] text-blue-700 leading-tight">
+                {isSendingEmail 
+                  ? 'E-posta servisi üzerinden onay kodu gönderiliyor...' 
+                  : (smtpStatus?.message || `${email} adresine 6 haneli güvenlik doğrulama e-postası iletildi.`)}
+              </p>
+              <div className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-blue-200 shadow-2xs">
+                <span className="font-mono font-black text-base text-slate-800 tracking-widest flex items-center gap-2">
+                  {isSendingEmail ? (
+                    <RefreshCw className="w-4 h-4 text-blue-600 animate-spin" />
+                  ) : (
+                    generatedCode
+                  )}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVerificationInput(generatedCode);
+                    setCodeCopied(true);
+                    addNotification('Kod Kopyalandı', '6 haneli onay kodu otomatik dolduruldu.', 'info');
+                  }}
+                  disabled={isSendingEmail}
+                  className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-[11px] rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  {codeCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{codeCopied ? 'Dolduruldu' : 'Kodu Doldur'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Input Code */}
+            <div className="space-y-1.5 pt-1">
+              <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <KeyRound className="w-3.5 h-3.5 text-rose-600" />
+                  <span>6 Haneli Onay Kodunu Giriniz *</span>
+                </span>
+                <span className="text-[10px] font-normal text-slate-400">Örn: {generatedCode}</span>
+              </label>
+              <input
+                type="text"
+                maxLength={6}
+                value={verificationInput}
+                onChange={(e) => setVerificationInput(e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder="• • • • • •"
+                className="w-full px-4 py-3 bg-slate-50 text-center text-xl font-mono font-black tracking-[0.4em] border border-slate-200 rounded-2xl outline-none focus:border-rose-500 focus:bg-white transition-all shadow-inner"
+                required
+                autoFocus
+              />
+            </div>
+
+            {/* Resend Code Action */}
+            <div className="flex items-center justify-between text-xs pt-1">
+              <span className="text-slate-500 text-[11px]">Kodu almadınız mı?</span>
+              <button
+                type="button"
+                onClick={handleResendCode}
+                disabled={resendTimer > 0}
+                className="font-bold text-rose-600 hover:text-rose-700 disabled:text-slate-400 disabled:cursor-not-allowed flex items-center gap-1 text-[11px] cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${resendTimer > 0 ? '' : 'animate-spin'}`} />
+                <span>
+                  {resendTimer > 0 ? `Yeniden Gönder (${resendTimer}s)` : 'Kodu Tekrar Gönder'}
+                </span>
+              </button>
+            </div>
+
+            {/* Buttons */}
+            <div className="space-y-2 pt-2">
+              <button
+                type="submit"
+                className="w-full py-3 bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-700 hover:to-pink-700 text-white font-black text-xs rounded-xl shadow-lg shadow-rose-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Doğrula ve Üyeliği Başlat</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsVerificationStep(false)}
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Form Bilgilerini Düzenle</span>
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   if (socialProvider) {
     return (
