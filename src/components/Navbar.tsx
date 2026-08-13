@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { 
   Search, 
@@ -52,6 +53,18 @@ export const Navbar: React.FC = () => {
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+  // Prevent background page scrolling when mobile menu drawer is open
+  useEffect(() => {
+    if (showMobileMenu) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showMobileMenu]);
 
   const unreadMessagesCount = conversations.reduce((acc, c) => acc + c.unreadCount, 0);
   const activeOrdersCount = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled').length;
@@ -313,19 +326,26 @@ export const Navbar: React.FC = () => {
       </nav>
 
       {/* Mobile Category Drawer Menu Modal */}
-      {showMobileMenu && (
-        <div className="sm:hidden fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-xs flex justify-start animate-in fade-in duration-200">
-          <div className="w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col p-4 overflow-y-auto">
+      {showMobileMenu && createPortal(
+        <div 
+          className="sm:hidden fixed inset-0 z-[9999] bg-slate-900/70 backdrop-blur-xs flex justify-start animate-in fade-in duration-200"
+          onClick={() => setShowMobileMenu(false)}
+        >
+          <div 
+            className="w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col p-4 overflow-y-auto relative z-10 animate-in slide-in-from-left duration-250"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <Grid className="w-5 h-5 text-rose-600" />
-                <span className="font-black text-slate-900 text-sm">Kategoriler</span>
+                <span className="font-black text-slate-900 text-sm">Kategoriler & Menü</span>
               </div>
               <button
                 onClick={() => setShowMobileMenu(false)}
-                className="p-1 rounded-full hover:bg-slate-100 text-slate-500"
+                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 cursor-pointer transition-colors"
+                title="Kapat"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 text-slate-700" />
               </button>
             </div>
 
@@ -336,9 +356,9 @@ export const Navbar: React.FC = () => {
                   <button
                     key={cat.id}
                     onClick={() => handleCategoryClick(cat.id)}
-                    className={`w-full flex items-center justify-between p-2.5 rounded-2xl text-xs font-bold transition-all ${
+                    className={`w-full flex items-center justify-between p-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
                       isActive
-                        ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                        ? 'bg-rose-50 text-rose-600 border border-rose-200 shadow-2xs'
                         : 'text-slate-700 hover:bg-slate-50'
                     }`}
                   >
@@ -359,11 +379,24 @@ export const Navbar: React.FC = () => {
                   setViewMode('ai_assistant');
                   setShowMobileMenu(false);
                 }}
-                className="w-full flex items-center gap-2 p-2.5 rounded-2xl text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200"
+                className="w-full flex items-center gap-2 p-2.5 rounded-2xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 cursor-pointer transition-colors"
               >
                 <Sparkles className="w-4 h-4 text-rose-500" />
                 <span>Moda AI Danışmanı</span>
               </button>
+
+              {isLoggedIn && (
+                <button
+                  onClick={() => {
+                    setViewMode('orders');
+                    setShowMobileMenu(false);
+                  }}
+                  className="w-full flex items-center gap-2 p-2.5 rounded-2xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 cursor-pointer transition-colors"
+                >
+                  <PackageCheck className="w-4 h-4 text-indigo-600" />
+                  <span>Siparişlerim & Satışlarım</span>
+                </button>
+              )}
 
               {!isLoggedIn ? (
                 <button
@@ -371,7 +404,7 @@ export const Navbar: React.FC = () => {
                     openAuthModal('login');
                     setShowMobileMenu(false);
                   }}
-                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-2xl text-xs font-black bg-slate-900 text-white"
+                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-2xl text-xs font-black bg-slate-900 hover:bg-slate-800 text-white cursor-pointer transition-colors shadow-xs"
                 >
                   <LogIn className="w-4 h-4" />
                   <span>Giriş Yap / Üye Ol</span>
@@ -382,7 +415,7 @@ export const Navbar: React.FC = () => {
                     logout();
                     setShowMobileMenu(false);
                   }}
-                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-2xl text-xs font-bold text-rose-600 bg-rose-50"
+                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-2xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 cursor-pointer transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Çıkış Yap</span>
@@ -390,7 +423,8 @@ export const Navbar: React.FC = () => {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );
