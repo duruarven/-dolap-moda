@@ -146,4 +146,7 @@ export interface UserProfile {
   pendingBalance: number;
   iban: string;
   isSuperSeller: boolean;
+  isSeller: boolean;
+  shopName?: string;
+  city?: string;
 }

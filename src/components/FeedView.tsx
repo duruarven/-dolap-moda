@@ -14,7 +14,8 @@ import {
   Zap,
   ShoppingBag,
   SlidersHorizontal,
-  ChevronRight
+  Store,
+  PlusCircle
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -34,6 +35,7 @@ const BRANDS = ['Tümü', 'Zara', 'Nike', 'Mango', 'Gucci', 'Adidas', 'Massimo D
 
 export const FeedView: React.FC = () => {
   const { 
+    currentUser,
     products, 
     favorites, 
     toggleFavorite, 
@@ -50,10 +52,9 @@ export const FeedView: React.FC = () => {
     setSortBy,
     setSelectedProduct,
     setViewMode,
-    resetFilters
+    resetFilters,
+    openBecomeSellerModal
   } = useApp();
-
-  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   // Filter products logic
   const filteredProducts = products.filter(p => {
@@ -100,23 +101,26 @@ export const FeedView: React.FC = () => {
         <div className="bg-gradient-to-r from-slate-900 via-purple-950 to-slate-900 rounded-2xl p-4 text-white shadow-md flex items-center justify-between overflow-hidden relative group">
           <div className="relative z-10 space-y-1">
             <span className="bg-amber-400/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-              Lüks Moda
+              Pazaryeri
             </span>
-            <h3 className="text-base font-bold leading-tight">Gucci, Prada & Vintage %70 İndirimde</h3>
-            <p className="text-xs text-slate-300">Orijinallik kontrol garantili lüks parçalar.</p>
+            <h3 className="text-base font-bold leading-tight">Dolabını Döndür, Tarzını Yenile!</h3>
+            <p className="text-xs text-slate-300">Sıfır etiketli parçalardan stil sahibi ikinci ele, aradığın her şey burada.</p>
           </div>
           <Sparkles className="w-16 h-16 text-amber-400/20 shrink-0 transform group-hover:scale-110 transition-transform" />
         </div>
 
-        <div className="hidden md:flex bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-4 text-white shadow-md items-center justify-between overflow-hidden relative group">
+        <div 
+          onClick={openBecomeSellerModal}
+          className="hidden md:flex bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-4 text-white shadow-md items-center justify-between overflow-hidden relative group cursor-pointer hover:shadow-lg transition-all"
+        >
           <div className="relative z-10 space-y-1">
             <span className="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-              Satış Yap
+              Satıcı Ol
             </span>
-            <h3 className="text-base font-bold leading-tight">Giyinmediğin Kıyafetleri Paraya Çevir</h3>
-            <p className="text-xs text-emerald-100">%0 Komisyonlu ilk ilanını hemen yayınla.</p>
+            <h3 className="text-base font-bold leading-tight">Mağazanı Aç & Satışa Başla</h3>
+            <p className="text-xs text-emerald-100">%0 Komisyonlu satıcı hesabını aktifleştir.</p>
           </div>
-          <ShoppingBag className="w-16 h-16 text-white/20 shrink-0 transform group-hover:scale-110 transition-transform" />
+          <Store className="w-16 h-16 text-white/20 shrink-0 transform group-hover:scale-110 transition-transform" />
         </div>
       </div>
 
@@ -173,9 +177,8 @@ export const FeedView: React.FC = () => {
           ))}
         </div>
 
-        {/* Sort & Filter Modal Toggle */}
+        {/* Sort & Filter Controls */}
         <div className="flex items-center gap-2 ml-auto">
-          {/* Free Shipping Toggle Button */}
           <button
             id="toggle-free-shipping"
             onClick={() => setFreeShippingOnly(!freeShippingOnly)}
@@ -190,7 +193,6 @@ export const FeedView: React.FC = () => {
             {freeShippingOnly && <Check className="w-3 h-3 text-emerald-600 ml-0.5" />}
           </button>
 
-          {/* Sort Menu */}
           <div className="relative">
             <select
               id="sort-by-select"
@@ -224,23 +226,40 @@ export const FeedView: React.FC = () => {
         )}
       </div>
 
-      {/* Empty State */}
+      {/* Clean Empty State with Become Seller & Post Item CTA */}
       {filteredProducts.length === 0 && (
-        <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-slate-300 p-8 space-y-3">
-          <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto text-2xl">
-            👗
+        <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8 space-y-4 max-w-xl mx-auto shadow-2xs">
+          <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-3xl flex items-center justify-center mx-auto text-2xl shadow-inner">
+            <Store className="w-8 h-8 text-rose-600" />
           </div>
-          <h3 className="text-base font-bold text-slate-800">Aradığınız kriterlere uygun ürün bulunamadı</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            Farklı bir arama kelimesi veya marka seçebilir veya filtreleri temizleyebilirsiniz.
-          </p>
-          <button
-            id="empty-state-reset"
-            onClick={resetFilters}
-            className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors shadow-sm"
-          >
-            Tüm İlanları Göster
-          </button>
+          <div className="space-y-1">
+            <h3 className="text-lg font-black text-slate-900">Henüz Listelenmiş İlan Yok</h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+              Mevcut tüm demolar temizlendi. Satıcı olarak ilk ürünü hemen yükleyebilir, dolabındaki kıyafetleri alıcılarla buluşturabilirsin!
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            {!currentUser.isSeller && (
+              <button
+                id="empty-state-become-seller"
+                onClick={openBecomeSellerModal}
+                className="px-5 py-3 bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-700 hover:to-pink-700 text-white text-xs font-black rounded-2xl shadow-md shadow-rose-200 transition-all flex items-center gap-2"
+              >
+                <Store className="w-4 h-4" />
+                <span>Satıcı Ol & Mağazanı Aç</span>
+              </button>
+            )}
+
+            <button
+              id="empty-state-add-product"
+              onClick={() => setViewMode('sell')}
+              className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-2xl shadow-md transition-all flex items-center gap-2"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>İlk Ürününü Yükle</span>
+            </button>
+          </div>
         </div>
       )}
 

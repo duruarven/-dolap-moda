@@ -1,6 +1,6 @@
 {
-  "name": "DolapModa - İkinci El Pazaryeri",
-  "description": "iOS ve Android uyumlu, alıcı ve satıcılar için ikinci el kıyafet, ayakkabı, çanta ve aksesuar pazaryeri uygulaması.",
+  "name": "CepteModa - Giy, Sat, Yenile | Sıfır & 2. El Pazaryeri",
+  "description": "CepteModa - Gardırobunun akıllı dönüşüm noktası. Sıfır etiketli ve ikinci el moda ürünleri pazaryeri.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

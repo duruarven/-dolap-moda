@@ -17,7 +17,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ product, onClose }
   const [cardNumber, setCardNumber] = useState('4543 **** **** 8821');
 
   const serviceFee = 9;
-  const shippingFee = product.shippingType === 'Kargo Bedava' ? 0 : 30;
+  const shippingFee = product.shippingType === 'Kargo Bedava' ? 0 : 117;
   const totalPrice = product.price + serviceFee + shippingFee;
 
   const handleCompleteOrder = (e: React.FormEvent) => {
@@ -158,7 +158,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ product, onClose }
               <span>₺{serviceFee}</span>
             </div>
             <div className="flex justify-between text-slate-600">
-              <span>Kargo Ücreti:</span>
+              <span>Kargo Ücreti (KDV Dahil):</span>
               <span className="text-emerald-600 font-bold">{shippingFee === 0 ? 'BEDAVA' : `₺${shippingFee}`}</span>
             </div>
             <div className="pt-2 border-t border-slate-200 flex justify-between text-sm font-black text-slate-900">

@@ -20,7 +20,14 @@ async function startServer() {
     if (!apiKey) {
       throw new Error('GEMINI_API_KEY eksik. Lütfen ortam değişkenlerini kontrol edin.');
     }
-    return new GoogleGenAI({ apiKey });
+    return new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+      },
+    });
   };
 
   // Health check API
@@ -73,7 +80,7 @@ Sadece geçerli bir JSON yanıtı döndür:
       }
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.6-flash',
         contents,
         config: {
           responseMimeType: 'application/json',
@@ -115,7 +122,7 @@ JSON Formatı:
 }`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.6-flash',
         contents: [systemPrompt],
         config: {
           responseMimeType: 'application/json',

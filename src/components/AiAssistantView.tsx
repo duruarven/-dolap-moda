@@ -90,7 +90,7 @@ export const AiAssistantView: React.FC = () => {
           <h1 className="text-base font-bold flex items-center gap-1.5">
             <span>CepteModa AI Moda Asistanı</span>
             <span className="bg-amber-400 text-slate-950 text-[9px] font-extrabold px-2 py-0.2 rounded-full">
-              GEMINI 2.5
+              GEMINI 3.6
             </span>
           </h1>
           <p className="text-xs text-slate-300">Pazarlık tüyoları, kombin tavsiyeleri ve ilan rehberi</p>

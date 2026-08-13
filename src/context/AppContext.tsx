@@ -23,6 +23,21 @@ interface AppContextType {
   currentUser: UserProfile;
   users: UserProfile[];
   switchUser: (userId: string) => void;
+  isLoggedIn: boolean;
+  isAuthModalOpen: boolean;
+  authInitialMode: 'login' | 'register';
+  openAuthModal: (mode?: 'login' | 'register') => void;
+  closeAuthModal: () => void;
+  login: (email: string, password: string) => void;
+  register: (fullName: string, email: string, password: string) => void;
+  logout: () => void;
+
+  // Legal Modal
+  isLegalModalOpen: boolean;
+  legalActiveTab: 'terms' | 'privacy' | 'kvkk';
+  openLegalModal: (tab?: 'terms' | 'privacy' | 'kvkk') => void;
+  closeLegalModal: () => void;
+
   products: Product[];
   favorites: string[];
   toggleFavorite: (productId: string) => void;
@@ -48,6 +63,12 @@ interface AppContextType {
   setSelectedProduct: (product: Product | null) => void;
   deviceFrame: DeviceFrame;
   setDeviceFrame: (frame: DeviceFrame) => void;
+
+  // Seller Management
+  isBecomeSellerModalOpen: boolean;
+  openBecomeSellerModal: () => void;
+  closeBecomeSellerModal: () => void;
+  becomeSeller: (shopName: string, city: string, iban: string, bio: string) => void;
 
   // Conversations & Chat
   conversations: Conversation[];
@@ -78,9 +99,98 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [users] = useState<UserProfile[]>(MOCK_USERS);
-  const [currentUser, setCurrentUser] = useState<UserProfile>(MOCK_USERS[0]); // Default: Ayşe Yılmaz (Buyer)
+  const [currentUser, setCurrentUser] = useState<UserProfile>(MOCK_USERS[0]);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // Requires login before publishing or seller actions
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authInitialMode, setAuthInitialMode] = useState<'login' | 'register'>('login');
+
+  const openAuthModal = (mode: 'login' | 'register' = 'login') => {
+    setAuthInitialMode(mode);
+    setIsAuthModalOpen(true);
+  };
+
+  const closeAuthModal = () => setIsAuthModalOpen(false);
+
+  const login = (email: string, pass: string) => {
+    const matchedUser = users.find(u => u.username.toLowerCase().includes(email.split('@')[0].toLowerCase())) || MOCK_USERS[0];
+    setCurrentUser(matchedUser);
+    setIsLoggedIn(true);
+    addNotification('Hoş Geldiniz! 👋', `${matchedUser.name} hesabınıza başarıyla giriş yapıldı.`, 'success');
+  };
+
+  const register = (fullName: string, email: string, pass: string) => {
+    const newUser: UserProfile = {
+      id: `user_${Date.now()}`,
+      name: fullName,
+      username: `@${fullName.toLowerCase().replace(/\s+/g, '_')}`,
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
+      bio: 'CepteModa yeni üyesi!',
+      rating: 5.0,
+      totalSales: 0,
+      activeListingsCount: 0,
+      followersCount: 0,
+      followingCount: 0,
+      walletBalance: 0,
+      pendingBalance: 0,
+      iban: '',
+      isSuperSeller: false,
+      isSeller: false,
+      shopName: '',
+      city: 'İstanbul'
+    };
+    setCurrentUser(newUser);
+    setIsLoggedIn(true);
+    addNotification('Aramıza Hoş Geldiniz! 🎉', 'Hesabınız başarıyla oluşturuldu.', 'success');
+  };
+
+  const logout = () => {
+    setIsLoggedIn(false);
+    addNotification('Çıkış Yapıldı', 'Hesabınızdan güvenle çıkış yaptınız.', 'info');
+  };
+
+  // Legal Modal State
+  const [isLegalModalOpen, setIsLegalModalOpen] = useState<boolean>(false);
+  const [legalActiveTab, setLegalActiveTab] = useState<'terms' | 'privacy' | 'kvkk'>('terms');
+
+  const openLegalModal = (tab: 'terms' | 'privacy' | 'kvkk' = 'terms') => {
+    setLegalActiveTab(tab);
+    setIsLegalModalOpen(true);
+  };
+
+  const closeLegalModal = () => setIsLegalModalOpen(false);
+
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
-  const [favorites, setFavorites] = useState<string[]>(['prod_1', 'prod_4']);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  
+  // Seller Modal State
+  const [isBecomeSellerModalOpen, setIsBecomeSellerModalOpen] = useState<boolean>(false);
+
+  const openBecomeSellerModal = () => {
+    if (!isLoggedIn) {
+      addNotification('Giriş Yapılmalı 🔒', 'Satıcı olmak ve mağaza açmak için lütfen önce giriş yapın.', 'warning');
+      openAuthModal('login');
+      return;
+    }
+    setIsBecomeSellerModalOpen(true);
+  };
+  const closeBecomeSellerModal = () => setIsBecomeSellerModalOpen(false);
+
+  const becomeSeller = (shopName: string, city: string, iban: string, bio: string) => {
+    if (!isLoggedIn) {
+      addNotification('Giriş Yapılmalı 🔒', 'Lütfen önce hesabınıza giriş yapın.', 'warning');
+      openAuthModal('login');
+      return;
+    }
+    setCurrentUser(prev => ({
+      ...prev,
+      isSeller: true,
+      shopName,
+      city,
+      iban,
+      bio: bio || prev.bio
+    }));
+    addNotification('Satıcı Hesabı Aktifleştirildi! 🎉', `${shopName} mağazanız oluşturuldu. Artık ilan verip satış yapabilirsiniz.`, 'success');
+  };
   
   // Filters
   const [selectedCategory, setSelectedCategory] = useState<string>('Tümü');
@@ -92,9 +202,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [sortBy, setSortBy] = useState<string>('newest');
 
   // View Mode & Navigation
-  const [viewMode, setViewMode] = useState<ViewMode>('feed');
+  const [viewModeState, setViewModeState] = useState<ViewMode>('feed');
+
+  const setViewMode = (mode: ViewMode) => {
+    if (!isLoggedIn && (mode === 'sell' || mode === 'orders' || mode === 'chat' || mode === 'profile')) {
+      addNotification('Giriş Yapılmalı 🔒', 'Bu alana erişmek ve işlem yapmak için lütfen önce giriş yapın.', 'warning');
+      openAuthModal('login');
+      return;
+    }
+    setViewModeState(mode);
+  };
+
+  const viewMode = viewModeState;
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [deviceFrame, setDeviceFrame] = useState<DeviceFrame>('mobile_ios');
+  const [deviceFrame, setDeviceFrame] = useState<DeviceFrame>('desktop');
 
   // Conversations & Messages
   const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
@@ -327,6 +448,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addProduct = (productData: Omit<Product, 'id' | 'seller' | 'createdAt' | 'favoriteCount' | 'likesCount' | 'commentsCount' | 'status'>) => {
+    if (!isLoggedIn) {
+      addNotification('Giriş Yapılmalı 🔒', 'Ürün yayınlamak için lütfen önce hesabınıza giriş yapın.', 'warning');
+      openAuthModal('login');
+      return;
+    }
+
+    if (!currentUser.isSeller) {
+      addNotification('Satıcı Profil Gereklidir 🏪', 'Ürün yayınlamak için ücretsiz satıcı profilinizi aktifleştirin.', 'info');
+      openBecomeSellerModal();
+      return;
+    }
+
     const newProduct: Product = {
       ...productData,
       id: `prod_${Date.now()}`,
@@ -380,6 +513,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       currentUser,
       users,
       switchUser,
+      isLoggedIn,
+      isAuthModalOpen,
+      authInitialMode,
+      openAuthModal,
+      closeAuthModal,
+      login,
+      register,
+      logout,
+      isLegalModalOpen,
+      legalActiveTab,
+      openLegalModal,
+      closeLegalModal,
       products,
       favorites,
       toggleFavorite,
@@ -403,6 +548,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setSelectedProduct,
       deviceFrame,
       setDeviceFrame,
+      isBecomeSellerModalOpen,
+      openBecomeSellerModal,
+      closeBecomeSellerModal,
+      becomeSeller,
       conversations,
       activeConversation,
       setActiveConversation,

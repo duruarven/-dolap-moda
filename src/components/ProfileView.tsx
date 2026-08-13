@@ -1,34 +1,34 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { MOCK_REVIEWS } from '../data/mockData';
 import { 
   User, 
   Wallet, 
-  Star, 
   Zap, 
-  ShoppingBag, 
-  Heart, 
   CheckCircle2, 
   Building2, 
-  ArrowUpRight, 
-  Settings,
-  Tag,
-  Plus
+  Plus,
+  Store,
+  Sparkles,
+  Heart,
+  LogIn,
+  UserPlus
 } from 'lucide-react';
 
 export const ProfileView: React.FC = () => {
   const { 
     currentUser, 
+    isLoggedIn,
+    openAuthModal,
     products, 
     favorites, 
     toggleFavorite, 
     setSelectedProduct, 
     setViewMode, 
     withdrawWalletBalance,
-    addNotification
+    openBecomeSellerModal
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'listings' | 'sold' | 'favorites' | 'reviews'>('listings');
+  const [activeTab, setActiveTab] = useState<'listings' | 'favorites' | 'reviews'>('listings');
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState<number>(currentUser.walletBalance);
 
@@ -43,15 +43,49 @@ export const ProfileView: React.FC = () => {
     setShowWithdrawModal(false);
   };
 
+  if (!isLoggedIn) {
+    return (
+      <div className="max-w-md mx-auto py-16 px-4 text-center space-y-6">
+        <div className="w-20 h-20 bg-rose-50 rounded-3xl flex items-center justify-center mx-auto text-rose-600 shadow-inner">
+          <User className="w-10 h-10" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-black text-slate-900">Hesabınıza Giriş Yapın</h2>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Dolabınızı yönetmek, siparişlerinizi takip etmek ve ilan vermek için giriş yapın veya hemen ücretsiz üye olun.
+          </p>
+        </div>
+
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={() => openAuthModal('login')}
+            className="flex-1 py-3 bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white font-black text-xs rounded-2xl shadow-md shadow-rose-200 flex items-center justify-center gap-1.5"
+          >
+            <LogIn className="w-4 h-4" />
+            <span>Giriş Yap</span>
+          </button>
+
+          <button
+            onClick={() => openAuthModal('register')}
+            className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs rounded-2xl shadow-md flex items-center justify-center gap-1.5"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Üye Ol</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-4 space-y-6 pb-24">
       {/* Profile Header Card */}
       <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-2xs">
         {/* Cover Image */}
         <div className="h-32 bg-gradient-to-r from-rose-500 via-pink-500 to-purple-600 relative">
-          {currentUser.isSuperSeller && (
+          {currentUser.isSeller && (
             <span className="absolute top-3 right-3 bg-amber-400 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
-              <Zap className="w-3.5 h-3.5 fill-slate-950" /> SÜPER SATICI
+              <Zap className="w-3.5 h-3.5 fill-slate-950" /> ONAYLI SATICI
             </span>
           )}
         </div>
@@ -70,26 +104,45 @@ export const ProfileView: React.FC = () => {
                 <CheckCircle2 className="w-4 h-4 text-rose-500 fill-rose-100" />
               </h1>
               <p className="text-xs text-slate-500 font-semibold">{currentUser.username}</p>
+              {currentUser.shopName && (
+                <div className="text-xs font-bold text-rose-600 flex items-center justify-center sm:justify-start gap-1">
+                  <Store className="w-3.5 h-3.5" />
+                  <span>{currentUser.shopName}</span>
+                </div>
+              )}
               <p className="text-xs text-slate-600 max-w-md">{currentUser.bio}</p>
             </div>
           </div>
 
-          {/* Sell New Item Shortcut */}
-          <button
-            id="profile-sell-new-btn"
-            onClick={() => setViewMode('sell')}
-            className="px-4 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 text-white font-bold text-xs rounded-2xl shadow-md shadow-rose-200 hover:from-rose-700 transition-all flex items-center gap-1.5"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Yeni Ürün Yükle</span>
-          </button>
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            {!currentUser.isSeller ? (
+              <button
+                id="profile-become-seller-btn"
+                onClick={openBecomeSellerModal}
+                className="px-4 py-2.5 bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white font-black text-xs rounded-2xl shadow-md shadow-rose-200 hover:from-rose-700 transition-all flex items-center gap-1.5"
+              >
+                <Store className="w-4 h-4" />
+                <span>Satıcı Ol</span>
+              </button>
+            ) : (
+              <button
+                id="profile-sell-new-btn"
+                onClick={() => setViewMode('sell')}
+                className="px-4 py-2.5 bg-gradient-to-r from-rose-600 to-pink-600 text-white font-bold text-xs rounded-2xl shadow-md shadow-rose-200 hover:from-rose-700 transition-all flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Yeni Ürün Yükle</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Stats Row */}
         <div className="grid grid-cols-4 border-t border-slate-100 bg-slate-50/50 text-center py-3 text-xs">
           <div>
             <span className="block font-black text-slate-900 text-sm">⭐ {currentUser.rating}</span>
-            <span className="text-[10px] text-slate-400">Dolap Puanı</span>
+            <span className="text-[10px] text-slate-400">Puan</span>
           </div>
           <div className="border-l border-slate-200">
             <span className="block font-black text-slate-900 text-sm">{currentUser.totalSales}</span>
@@ -100,11 +153,36 @@ export const ProfileView: React.FC = () => {
             <span className="text-[10px] text-slate-400">Takipçi</span>
           </div>
           <div className="border-l border-slate-200">
-            <span className="block font-black text-slate-900 text-sm">{currentUser.activeListingsCount}</span>
+            <span className="block font-black text-slate-900 text-sm">{myActiveListings.length}</span>
             <span className="text-[10px] text-slate-400">Yayındaki İlan</span>
           </div>
         </div>
       </div>
+
+      {/* Become Seller Callout Banner if not a seller */}
+      {!currentUser.isSeller && (
+        <div className="bg-gradient-to-r from-rose-600 via-pink-600 to-purple-600 text-white p-5 rounded-3xl shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="space-y-1 text-center sm:text-left">
+            <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs font-bold text-amber-300">
+              <Sparkles className="w-4 h-4" />
+              <span>Kendi Dolabını Aç, Kazanç Sağla!</span>
+            </div>
+            <h3 className="text-base font-black">CepteModa Satıcısı Olmak Çok Kolay</h3>
+            <p className="text-xs text-rose-100">
+              Giymediğin kıyafetleri fotoğrafla, mağazanı aktifleştir ve satışa başla.
+            </p>
+          </div>
+
+          <button
+            id="profile-banner-become-seller"
+            onClick={openBecomeSellerModal}
+            className="px-5 py-3 bg-white text-rose-600 font-black text-xs rounded-2xl shadow-md hover:bg-rose-50 transition-all shrink-0 flex items-center gap-1.5"
+          >
+            <Store className="w-4 h-4" />
+            <span>Satıcı Hesabımı Aç</span>
+          </button>
+        </div>
+      )}
 
       {/* Wallet Balance Card */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 rounded-3xl shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -159,42 +237,59 @@ export const ProfileView: React.FC = () => {
         >
           Favorilerim ({myFavoritesList.length})
         </button>
-
-        <button
-          id="tab-my-reviews"
-          onClick={() => setActiveTab('reviews')}
-          className={`pb-3 transition-colors border-b-2 ${
-            activeTab === 'reviews' ? 'border-rose-600 text-rose-600 font-extrabold' : 'border-transparent hover:text-slate-900'
-          }`}
-        >
-          Değerlendirmeler ({MOCK_REVIEWS.length})
-        </button>
       </div>
 
       {/* Tab Contents */}
       {activeTab === 'listings' && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {myActiveListings.map(product => (
-            <div
-              key={product.id}
-              onClick={() => {
-                setSelectedProduct(product);
-                setViewMode('product_detail');
-              }}
-              className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs cursor-pointer group hover:shadow-md transition-all"
-            >
-              <div className="aspect-square bg-slate-100 overflow-hidden relative">
-                <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                <span className="absolute top-2 left-2 bg-slate-900/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
-                  ₺{product.price}
-                </span>
-              </div>
-              <div className="p-2.5 space-y-1">
-                <h4 className="text-xs font-bold text-slate-800 truncate">{product.title}</h4>
-                <div className="text-[10px] text-slate-400">{product.favoriteCount} favori</div>
-              </div>
+          {myActiveListings.length === 0 ? (
+            <div className="col-span-full py-12 text-center bg-white rounded-3xl border border-slate-200 p-8 space-y-3">
+              <Store className="w-10 h-10 text-slate-300 mx-auto" />
+              <div className="text-xs font-bold text-slate-700">Yayında hiç ilanınız bulunmuyor</div>
+              <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
+                {currentUser.isSeller 
+                  ? 'Ürün yükle butonunu kullanarak dolabınızdaki ürünleri sergileyebilirsiniz.' 
+                  : 'Satıcı hesabı oluşturup hemen ürün satmaya başlayabilirsiniz.'}
+              </p>
+              {!currentUser.isSeller ? (
+                <button
+                  onClick={openBecomeSellerModal}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs"
+                >
+                  Satıcı Ol
+                </button>
+              ) : (
+                <button
+                  onClick={() => setViewMode('sell')}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs"
+                >
+                  Ürün Yükle
+                </button>
+              )}
             </div>
-          ))}
+          ) : (
+            myActiveListings.map(product => (
+              <div
+                key={product.id}
+                onClick={() => {
+                  setSelectedProduct(product);
+                  setViewMode('product_detail');
+                }}
+                className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs cursor-pointer group hover:shadow-md transition-all"
+              >
+                <div className="aspect-square bg-slate-100 overflow-hidden relative">
+                  <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                  <span className="absolute top-2 left-2 bg-slate-900/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                    ₺{product.price}
+                  </span>
+                </div>
+                <div className="p-2.5 space-y-1">
+                  <h4 className="text-xs font-bold text-slate-800 truncate">{product.title}</h4>
+                  <div className="text-[10px] text-slate-400">{product.favoriteCount} favori</div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
 
@@ -236,24 +331,6 @@ export const ProfileView: React.FC = () => {
         </div>
       )}
 
-      {activeTab === 'reviews' && (
-        <div className="space-y-3">
-          {MOCK_REVIEWS.map(rev => (
-            <div key={rev.id} className="bg-white p-4 rounded-2xl border border-slate-200 space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <img src={rev.buyerAvatar} alt={rev.buyerName} className="w-7 h-7 rounded-full object-cover" />
-                  <span className="font-bold text-slate-800">{rev.buyerName}</span>
-                </div>
-                <span className="text-amber-500 font-bold">{"⭐".repeat(rev.rating)}</span>
-              </div>
-              <p className="text-slate-600">{rev.comment}</p>
-              <div className="text-[10px] text-slate-400 italic">Satın alınan ürün: {rev.productTitle} • {rev.date}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* IBAN Withdraw Modal */}
       {showWithdrawModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -265,7 +342,7 @@ export const ProfileView: React.FC = () => {
 
             <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-xs space-y-1">
               <div className="text-slate-500 font-semibold">Tanımlı IBAN:</div>
-              <div className="font-mono font-bold text-slate-800">{currentUser.iban}</div>
+              <div className="font-mono font-bold text-slate-800">{currentUser.iban || 'Tanımlı IBAN Yok'}</div>
             </div>
 
             <form onSubmit={handleWithdraw} className="space-y-3">

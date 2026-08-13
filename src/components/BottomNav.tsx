@@ -6,13 +6,28 @@ import {
   PlusCircle, 
   MessageSquare, 
   User,
-  PackageCheck
+  Store
 } from 'lucide-react';
 
 export const BottomNav: React.FC = () => {
-  const { viewMode, setViewMode, favorites, conversations, orders } = useApp();
+  const { 
+    currentUser, 
+    viewMode, 
+    setViewMode, 
+    favorites, 
+    conversations, 
+    openBecomeSellerModal 
+  } = useApp();
 
   const unreadCount = conversations.reduce((acc, c) => acc + c.unreadCount, 0);
+
+  const handleSellClick = () => {
+    if (!currentUser.isSeller) {
+      openBecomeSellerModal();
+    } else {
+      setViewMode('sell');
+    }
+  };
 
   return (
     <div id="bottom-navigation-bar" className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 py-1.5 px-4 shadow-lg sm:hidden">
@@ -46,16 +61,22 @@ export const BottomNav: React.FC = () => {
           )}
         </button>
 
-        {/* Satış Yap (Center Highlighted Button) */}
+        {/* Satıcı Ol / Satış Yap (Center Highlighted Button) */}
         <button
           id="bottom-tab-sell"
-          onClick={() => setViewMode('sell')}
+          onClick={handleSellClick}
           className="flex flex-col items-center justify-center -mt-5 mx-1"
         >
           <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-rose-600 via-pink-500 to-rose-400 text-white flex items-center justify-center shadow-lg shadow-rose-300 active:scale-95 transition-transform border-2 border-white">
-            <PlusCircle className="w-7 h-7" />
+            {!currentUser.isSeller ? (
+              <Store className="w-6 h-6" />
+            ) : (
+              <PlusCircle className="w-7 h-7" />
+            )}
           </div>
-          <span className="text-[10px] font-bold text-rose-600 mt-0.5">Satış Yap</span>
+          <span className="text-[10px] font-bold text-rose-600 mt-0.5">
+            {!currentUser.isSeller ? 'Satıcı Ol' : 'Satış Yap'}
+          </span>
         </button>
 
         {/* Mesajlar */}

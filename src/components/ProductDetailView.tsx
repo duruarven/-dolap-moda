@@ -288,11 +288,11 @@ export const ProductDetailView: React.FC = () => {
 
               <div className="space-y-1.5">
                 {[
-                  { name: 'Trendyol Express', time: '1-2 İş Günü', badge: 'Hızlı Teslimat ⚡', price: selectedProduct.shippingType === 'Kargo Bedava' ? 'Ücretsiz' : '₺29.90' },
-                  { name: 'Yurtiçi Kargo', time: '1-2 İş Günü', badge: 'Popüler', price: selectedProduct.shippingType === 'Kargo Bedava' ? 'Ücretsiz' : '₺34.90' },
-                  { name: 'Aras Kargo', time: '2-3 İş Günü', badge: 'Standart', price: selectedProduct.shippingType === 'Kargo Bedava' ? 'Ücretsiz' : '₺32.90' },
-                  { name: 'MNG Kargo', time: '2-3 İş Günü', badge: 'Standart', price: selectedProduct.shippingType === 'Kargo Bedava' ? 'Ücretsiz' : '₺31.90' },
-                  { name: 'PTT Kargo', time: '2-4 İş Günü', badge: 'Ekonomik', price: selectedProduct.shippingType === 'Kargo Bedava' ? 'Ücretsiz' : '₺24.90' },
+                  { name: 'Trendyol Express', time: '1-2 İş Günü', badge: 'Hızlı Teslimat ⚡', price: selectedProduct.shippingType === 'Kargo Bedava' ? 'Ücretsiz' : '₺117 (KDV Dahil)' },
+                  { name: 'Yurtiçi Kargo', time: '1-2 İş Günü', badge: 'Popüler', price: selectedProduct.shippingType === 'Kargo Bedava' ? 'Ücretsiz' : '₺117 (KDV Dahil)' },
+                  { name: 'Aras Kargo', time: '2-3 İş Günü', badge: 'Standart', price: selectedProduct.shippingType === 'Kargo Bedava' ? 'Ücretsiz' : '₺117 (KDV Dahil)' },
+                  { name: 'MNG Kargo', time: '2-3 İş Günü', badge: 'Standart', price: selectedProduct.shippingType === 'Kargo Bedava' ? 'Ücretsiz' : '₺117 (KDV Dahil)' },
+                  { name: 'PTT Kargo', time: '2-4 İş Günü', badge: 'Ekonomik', price: selectedProduct.shippingType === 'Kargo Bedava' ? 'Ücretsiz' : '₺117 (KDV Dahil)' },
                 ].map((carrier, idx) => (
                   <div key={idx} className="flex items-center justify-between bg-white p-2 rounded-xl border border-slate-200/60 hover:border-rose-200 transition-colors">
                     <div className="flex items-center gap-2">

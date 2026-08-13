@@ -11,7 +11,10 @@ import {
   ShoppingBag, 
   DollarSign, 
   Loader2,
-  X
+  X,
+  Lock,
+  Store,
+  LogIn
 } from 'lucide-react';
 
 const CATEGORIES = ['Kadın', 'Erkek', 'Çocuk', 'Lüks', 'Ayakkabı', 'Çanta', 'Aksesuar', 'Kozmetik', 'Ev & Yaşam'];
@@ -19,7 +22,7 @@ const BRANDS = ['Zara', 'Mango', 'Nike', 'Adidas', 'Gucci', 'LCW', 'Pull&Bear', 
 const SIZES = ['XS (34)', 'S (36)', 'M (38)', 'L (40)', 'XL (42)', '36 (EU)', '37 (EU)', '38 (EU)', '39 (EU)', '40 (EU)', 'Standart'];
 
 export const SellItemView: React.FC = () => {
-  const { addProduct, addNotification } = useApp();
+  const { currentUser, isLoggedIn, addProduct, addNotification, openBecomeSellerModal, openAuthModal } = useApp();
 
   const [images, setImages] = useState<string[]>([
     'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=800'
@@ -37,6 +40,65 @@ export const SellItemView: React.FC = () => {
   const [shippingType, setShippingType] = useState<ShippingType>('Kargo Bedava');
 
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
+
+  // Guard 1: Must be logged in
+  if (!isLoggedIn) {
+    return (
+      <div className="max-w-md mx-auto my-12 p-8 bg-white rounded-3xl border border-slate-200 shadow-xl text-center space-y-4 animate-in fade-in zoom-in-95 duration-200">
+        <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+          <Lock className="w-8 h-8" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-xl font-black text-slate-900">Giriş Yapılması Gerekiyor 🔒</h2>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            CepteModa pazaryerinde ürün yükleyip satış yapabilmek için lütfen önce hesabınıza giriş yapın veya ücretsiz üye olun.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 justify-center pt-2">
+          <button
+            type="button"
+            onClick={() => openAuthModal('login')}
+            className="flex-1 py-3 bg-gradient-to-r from-rose-600 to-pink-600 text-white font-black text-xs rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <LogIn className="w-4 h-4" />
+            <span>Giriş Yap</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => openAuthModal('register')}
+            className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs rounded-xl shadow-md transition-all cursor-pointer"
+          >
+            <span>Ücretsiz Üye Ol</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Guard 2: Must be a seller
+  if (!currentUser.isSeller) {
+    return (
+      <div className="max-w-md mx-auto my-12 p-8 bg-white rounded-3xl border border-slate-200 shadow-xl text-center space-y-4 animate-in fade-in zoom-in-95 duration-200">
+        <div className="w-16 h-16 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+          <Store className="w-8 h-8" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-xl font-black text-slate-900">Satıcı Hesabı Gerekli 🏪</h2>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Ürün yükleyebilmek için mağaza adınızı ve IBAN bilgilerinizi girerek ücretsiz satıcı profilinizi aktifleştirmelisiniz.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={openBecomeSellerModal}
+          className="w-full py-3 bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 text-white font-black text-xs rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <Store className="w-4 h-4" />
+          <span>Satıcı Profilini Aktifleştir</span>
+        </button>
+      </div>
+    );
+  }
 
   // Commission calculation (10% platform fee)
   const platformFee = Math.round(price * 0.1);
@@ -361,7 +423,7 @@ export const SellItemView: React.FC = () => {
                     : 'bg-slate-50 border-slate-200 text-slate-600'
                 }`}
               >
-                Alıcı Öder (Sabit ₺30)
+                Alıcı Öder (Sabit ₺117 KDV Dahil)
               </button>
             </div>
           </div>
