@@ -43,11 +43,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   // Email Verification Code states
   const [isVerificationStep, setIsVerificationStep] = useState(false);
-  const [generatedCode, setGeneratedCode] = useState('');
+  const [hashedCode, setHashedCode] = useState('');
+  const [expiresAt, setExpiresAt] = useState<number>(0);
   const [verificationInput, setVerificationInput] = useState('');
   const [resendTimer, setResendTimer] = useState(60);
-  const [codeCopied, setCodeCopied] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
   const [smtpStatus, setSmtpStatus] = useState<{ configured: boolean; message: string } | null>(null);
 
   // Social Auth confirmation states (stops automatic instant login)
@@ -100,7 +101,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   // Dispatch email sending via server API route (/api/auth/send-verification-email)
-  const dispatchVerificationEmail = async (userEmail: string, userName: string, code: string) => {
+  const dispatchVerificationEmail = async (userEmail: string, userName: string) => {
     setIsSendingEmail(true);
     try {
       const response = await fetch('/api/auth/send-verification-email', {
@@ -108,28 +109,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: userEmail,
-          fullName: userName,
-          code: code
+          fullName: userName
         })
       });
 
       const data = await response.json();
-      if (data.success) {
+      if (data.success && data.hashCode) {
+        setHashedCode(data.hashCode);
+        setExpiresAt(data.expiresAt || Date.now() + 600000);
         setSmtpStatus({
           configured: !!data.smtpConfigured,
-          message: data.message || 'Onay kodu iletildi.'
+          message: data.message || 'Onay kodu e-posta ile iletildi.'
         });
 
         if (data.smtpConfigured) {
           addNotification(
             '📬 E-Posta Gönderildi!',
-            `${userEmail} adresinize SMTP e-posta bildirim servisi ile 6 haneli onay kodu gönderildi.`,
+            `${userEmail} adresinize SMTP e-posta servisi ile 6 haneli onay kodu gönderildi.`,
             'success'
           );
         } else {
           addNotification(
             '📩 Onay Kodu Gönderildi',
-            `${userEmail} adresiniz için 6 haneli doğrulama kodunuz (${code}) oluşturuldu.`,
+            `${userEmail} adresinize 6 haneli güvenlik doğrulama kodu iletildi. Lütfen gelen kutunuzu kontrol ediniz.`,
             'info'
           );
         }
@@ -138,7 +140,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
     } catch (err: any) {
       console.error('Email API Error:', err);
-      addNotification('E-Posta Servisi', 'Kod oluşturuldu. Onay ekranında kullanabilirsiniz.', 'info');
+      addNotification('E-Posta Servisi', 'E-posta servisi ile iletişim hatası oluştu.', 'warning');
     } finally {
       setIsSendingEmail(false);
     }
@@ -156,53 +158,72 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    // Generate random 6-digit verification code
-    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedCode(newCode);
     setIsVerificationStep(true);
     setResendTimer(60);
     setVerificationInput('');
-    setCodeCopied(false);
 
     // Trigger server SMTP API
-    await dispatchVerificationEmail(email, fullName, newCode);
+    await dispatchVerificationEmail(email, fullName);
   };
 
   // Resend code logic
   const handleResendCode = async () => {
     if (resendTimer > 0 || isSendingEmail) return;
-    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedCode(newCode);
     setResendTimer(60);
     setVerificationInput('');
-    setCodeCopied(false);
 
-    await dispatchVerificationEmail(email, fullName, newCode);
+    await dispatchVerificationEmail(email, fullName);
   };
 
-  // Step 2: Verify code and complete membership
-  const handleVerifyCodeSubmit = (e: React.FormEvent) => {
+  // Step 2: Verify code via hashed confirmation code API and complete membership
+  const handleVerifyCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!verificationInput || verificationInput.trim().length < 6) {
+    const inputCode = verificationInput.trim();
+    if (!inputCode || inputCode.length < 6) {
       addNotification('Hata', 'Lütfen 6 haneli onay kodunu eksiksiz giriniz.', 'warning');
       return;
     }
 
-    if (verificationInput.trim() === generatedCode) {
-      register(fullName, email, password);
-      addNotification(
-        'E-posta Doğrulandı! 🎉',
-        'Hesabınız başarıyla oluşturuldu ve e-posta adresiniz onaylandı. Aramıza hoş geldiniz!',
-        'success'
-      );
-      setIsVerificationStep(false);
-      onClose();
-    } else {
-      addNotification(
-        'Hatalı Onay Kodu! ❌',
-        'Girdiğiniz onay kodu geçersiz. Lütfen tekrar deneyin veya yeni kod isteyin.',
-        'warning'
-      );
+    if (!hashedCode) {
+      addNotification('Hata', 'Geçerli bir doğrulama oturumu bulunamadı. Lütfen tekrar kod isteyiniz.', 'warning');
+      return;
+    }
+
+    setIsVerifyingCode(true);
+    try {
+      const response = await fetch('/api/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email,
+          code: inputCode,
+          hashCode: hashedCode,
+          expiresAt: expiresAt
+        })
+      });
+
+      const data = await response.json();
+      if (data.success && data.verified) {
+        register(fullName, email, password);
+        addNotification(
+          'E-posta Doğrulandı! 🎉',
+          'Hesabınız başarıyla oluşturuldu ve e-posta adresiniz onaylandı. Aramıza hoş geldiniz!',
+          'success'
+        );
+        setIsVerificationStep(false);
+        onClose();
+      } else {
+        addNotification(
+          'Hatalı Onay Kodu! ❌',
+          data.error || 'Girdiğiniz onay kodu geçersiz. Lütfen tekrar deneyin veya yeni kod isteyin.',
+          'warning'
+        );
+      }
+    } catch (err: any) {
+      console.error('Verify API Error:', err);
+      addNotification('Doğrulama Hatası', 'Kod doğrulanırken sunucu hatası oluştu.', 'warning');
+    } finally {
+      setIsVerifyingCode(false);
     }
   };
 
@@ -269,47 +290,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <form onSubmit={handleVerifyCodeSubmit} className="p-6 space-y-4">
             
             {/* Email Dispatch Notification Status Box */}
-            <div className="p-3.5 bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border border-blue-200/80 rounded-2xl space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-blue-900">
+            <div className="p-3.5 bg-gradient-to-r from-rose-50 via-pink-50 to-rose-50 border border-rose-200/80 rounded-2xl space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-rose-900">
                 <span className="flex items-center gap-1.5">
-                  <Mail className="w-4 h-4 text-blue-600" />
-                  <span>
-                    {smtpStatus?.configured ? '📬 SMTP E-Posta Servisi (Aktif)' : '📩 E-Posta Bildirim Servisi'}
-                  </span>
+                  <Mail className="w-4 h-4 text-rose-600" />
+                  <span>E-Posta Doğrulama Kodu Gönderildi</span>
                 </span>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
-                  smtpStatus?.configured ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-200/80 text-blue-800'
+                  smtpStatus?.configured ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
                 }`}>
-                  {smtpStatus?.configured ? 'SMTP Canlı' : 'Önizleme Modu'}
+                  {smtpStatus?.configured ? 'SMTP Canlı' : 'Güvenlik Kontrolü'}
                 </span>
               </div>
-              <p className="text-[11px] text-blue-700 leading-tight">
+              <p className="text-[11px] text-slate-600 leading-normal">
                 {isSendingEmail 
                   ? 'E-posta servisi üzerinden onay kodu gönderiliyor...' 
-                  : (smtpStatus?.message || `${email} adresine 6 haneli güvenlik doğrulama e-postası iletildi.`)}
-              </p>
-              <div className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-blue-200 shadow-2xs">
-                <span className="font-mono font-black text-base text-slate-800 tracking-widest flex items-center gap-2">
-                  {isSendingEmail ? (
-                    <RefreshCw className="w-4 h-4 text-blue-600 animate-spin" />
-                  ) : (
-                    generatedCode
+                  : (
+                    <>
+                      <strong className="text-slate-900">{email}</strong> adresinize 6 haneli doğrulama kodu iletildi. Lütfen gelen kutunuzu (ve Spaml/Gereksiz klasörünü) kontrol ediniz.
+                    </>
                   )}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setVerificationInput(generatedCode);
-                    setCodeCopied(true);
-                    addNotification('Kod Kopyalandı', '6 haneli onay kodu otomatik dolduruldu.', 'info');
-                  }}
-                  disabled={isSendingEmail}
-                  className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-[11px] rounded-lg transition-all flex items-center gap-1 cursor-pointer"
-                >
-                  {codeCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{codeCopied ? 'Dolduruldu' : 'Kodu Doldur'}</span>
-                </button>
-              </div>
+              </p>
             </div>
 
             {/* Input Code */}
@@ -319,7 +320,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <KeyRound className="w-3.5 h-3.5 text-rose-600" />
                   <span>6 Haneli Onay Kodunu Giriniz *</span>
                 </span>
-                <span className="text-[10px] font-normal text-slate-400">Örn: {generatedCode}</span>
               </label>
               <input
                 type="text"
@@ -353,10 +353,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <div className="space-y-2 pt-2">
               <button
                 type="submit"
-                className="w-full py-3 bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-700 hover:to-pink-700 text-white font-black text-xs rounded-xl shadow-lg shadow-rose-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                disabled={isVerifyingCode}
+                className="w-full py-3 bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:from-rose-700 hover:to-pink-700 disabled:opacity-50 text-white font-black text-xs rounded-xl shadow-lg shadow-rose-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Doğrula ve Üyeliği Başlat</span>
-                <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                {isVerifyingCode ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 text-white animate-spin" />
+                    <span>Doğrulanıyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Doğrula ve Üyeliği Başlat</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                  </>
+                )}
               </button>
 
               <button

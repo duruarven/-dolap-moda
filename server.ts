@@ -4,8 +4,18 @@ import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
+import crypto from 'crypto';
 
 dotenv.config();
+
+const VERIFICATION_SALT = process.env.VERIFICATION_SALT || 'ceptemoda_secure_verification_salt_2026';
+
+function hashVerificationCode(code: string, email: string): string {
+  return crypto
+    .createHash('sha256')
+    .update(`${code.trim()}:${email.toLowerCase().trim()}:${VERIFICATION_SALT}`)
+    .digest('hex');
+}
 
 const currentDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
 
@@ -66,14 +76,19 @@ async function startServer() {
   // API Route: Send Email Verification Code via SMTP / Notification Service
   app.post('/api/auth/send-verification-email', async (req, res) => {
     try {
-      const { email, code, fullName } = req.body;
+      const { email, fullName, code: customCode } = req.body;
 
-      if (!email || !code) {
+      if (!email) {
         return res.status(400).json({ 
           success: false, 
-          error: 'E-posta ve onay kodu zorunludur.' 
+          error: 'E-posta adresi zorunludur.' 
         });
       }
+
+      // Generate 6-digit verification code if not provided
+      const code = customCode || Math.floor(100000 + Math.random() * 900000).toString();
+      const hashCode = hashVerificationCode(code, email);
+      const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
 
       const transporter = getTransporter();
       const fromAddress = process.env.SMTP_FROM || 'CepteModa <noreply@ceptemoda.com>';
@@ -136,17 +151,21 @@ async function startServer() {
         console.log(`[SMTP EMAIL SENT] Real email delivered to ${email} with code ${code}`);
         return res.json({
           success: true,
+          hashCode,
+          expiresAt,
           smtpConfigured: true,
           message: `${email} adresine doğrulama kodu başarıyla e-posta olarak gönderildi.`,
         });
       } else {
-        // Fallback preview mode (Log to console & notify app)
-        console.log(`[SMTP SIMULATION MODE] Code ${code} sent to ${email} (Configure SMTP_USER & SMTP_PASS in .env.example for live delivery)`);
+        // Fallback preview mode (Log to console & return hashed code for app state verification)
+        console.log(`[SMTP SIMULATION MODE] Verification code generated for ${email}: ${code} (Configure SMTP_USER & SMTP_PASS in .env.example for live delivery)`);
         return res.json({
           success: true,
+          hashCode,
+          expiresAt,
           smtpConfigured: false,
           simulated: true,
-          message: `${email} adresine doğrulama e-postası tetiklendi (Önizleme/Simülasyon Modu).`,
+          message: `${email} adresine doğrulama e-postası tetiklendi (Güvenlik Önizleme Modu).`,
         });
       }
     } catch (error: any) {
@@ -154,6 +173,48 @@ async function startServer() {
       res.status(500).json({
         success: false,
         error: error.message || 'E-posta gönderimi sırasında bir sunucu hatası oluştu.',
+      });
+    }
+  });
+
+  // API Route: Verify 6-digit confirmation code against temporary hashed code
+  app.post('/api/auth/verify-code', (req, res) => {
+    try {
+      const { email, code, hashCode, expiresAt } = req.body;
+
+      if (!email || !code || !hashCode) {
+        return res.status(400).json({
+          success: false,
+          error: 'E-posta adresi, 6 haneli onay kodu ve doğrulama anahtarı zorunludur.',
+        });
+      }
+
+      if (expiresAt && Date.now() > Number(expiresAt)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Doğrulama kodunun süresi dolmuş (10 dakika geçerli). Lütfen yeni kod isteyiniz.',
+        });
+      }
+
+      const expectedHash = hashVerificationCode(code, email);
+
+      if (expectedHash === hashCode) {
+        return res.json({
+          success: true,
+          verified: true,
+          message: 'E-posta adresi başarıyla doğrulandı.',
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          error: 'Girdiğiniz 6 haneli onay kodu hatalı. Lütfen e-postanızı kontrol edip tekrar deneyiniz.',
+        });
+      }
+    } catch (error: any) {
+      console.error('[VERIFY ERROR]', error);
+      res.status(500).json({
+        success: false,
+        error: 'Doğrulama işlemi sırasında bir sunucu hatası oluştu.',
       });
     }
   });
