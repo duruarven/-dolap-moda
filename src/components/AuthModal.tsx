@@ -11,7 +11,8 @@ import {
   ShieldCheck, 
   CheckCircle2,
   LogIn,
-  UserPlus
+  UserPlus,
+  ArrowLeft
 } from 'lucide-react';
 
 interface AuthModalProps {
@@ -36,6 +37,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [rememberMe, setRememberMe] = useState(true);
   const [agreeTerms, setAgreeTerms] = useState(true);
 
+  // Social Auth confirmation states (stops automatic instant login)
+  const [socialProvider, setSocialProvider] = useState<'Google' | 'Apple' | null>(null);
+  const [socialEmail, setSocialEmail] = useState('');
+  const [socialName, setSocialName] = useState('');
+  const [hideAppleEmail, setHideAppleEmail] = useState(false);
+
   // Sync mode and clear inputs when modal opens or initialMode changes
   useEffect(() => {
     if (isOpen) {
@@ -44,6 +51,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setPassword('');
       setFullName('');
       setPhone('');
+      setSocialProvider(null);
     }
   }, [isOpen, initialMode]);
 
@@ -75,13 +83,171 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     onClose();
   };
 
-  const handleSocialLogin = (provider: string) => {
-    const socialName = `${provider} Üyesi`;
-    const socialEmail = `${provider.toLowerCase().replace(/\s+/g, '')}_user@gmail.com`;
-    register(socialName, socialEmail, 'social_auth_pwd');
-    addNotification('Sosyal Giriş Yapıldı', `${provider} hesabınız ile başarıyla giriş yapıldı.`, 'success');
+  const handleSocialClick = (provider: 'Google' | 'Apple') => {
+    setSocialProvider(provider);
+    if (provider === 'Google') {
+      setSocialName('Ferhat Çiçek');
+      setSocialEmail('ferhatcicek4734@gmail.com');
+    } else {
+      setSocialName('Apple Kullanıcısı');
+      setSocialEmail('user@icloud.com');
+    }
+  };
+
+  const handleConfirmSocialLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!socialEmail || !socialName) {
+      addNotification('Hata', 'Lütfen hesap e-posta ve isim bilgilerini doldurunuz.', 'warning');
+      return;
+    }
+
+    const finalEmail = (socialProvider === 'Apple' && hideAppleEmail)
+      ? `privaterelay_${Date.now()}@privaterelay.appleid.com`
+      : socialEmail;
+
+    register(socialName, finalEmail, 'social_auth');
+    addNotification('Sosyal Giriş Yapıldı', `${socialProvider} hesabınız ile başarıyla giriş yapıldı.`, 'success');
+    setSocialProvider(null);
     onClose();
   };
+
+  if (socialProvider) {
+    return (
+      <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+        <div className="bg-white max-w-md w-full rounded-3xl shadow-2xl overflow-hidden border border-slate-100 relative animate-in fade-in zoom-in-95 duration-200 my-8">
+          
+          {/* Social Provider Header */}
+          <div className={`p-6 text-white relative ${
+            socialProvider === 'Google'
+              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700'
+              : 'bg-slate-950'
+          }`}>
+            <button
+              onClick={() => setSocialProvider(null)}
+              className="absolute top-4 right-4 text-white/80 hover:text-white bg-white/20 p-1.5 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 mb-2">
+              <span className="bg-white/20 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-xs">
+                {socialProvider === 'Google' ? 'Google OAuth' : 'Apple ID Sign In'}
+              </span>
+            </div>
+
+            <h2 className="text-xl font-black text-white flex items-center gap-2">
+              {socialProvider === 'Google' ? (
+                <svg className="w-6 h-6 bg-white rounded-full p-1" viewBox="0 0 24 24">
+                  <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.2 9 5 12 5z"/>
+                  <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"/>
+                  <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9c-.3-.8-.5-1.6-.5-2.4z"/>
+                  <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.2-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"/>
+                </svg>
+              ) : (
+                <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.09c.67-.81 1.12-1.94.99-3.09-0.96.04-2.13.64-2.82 1.44-.61.71-1.15 1.86-1.01 2.99 1.08.08 2.17-.53 2.84-1.34z"/>
+                </svg>
+              )}
+              <span>{socialProvider} ile Oturum Aç</span>
+            </h2>
+            <p className="text-xs text-blue-100 mt-1">
+              CepteModa uygulamasına yönlendiriliyorsunuz. Lütfen hesap bilgilerinizi kontrol edip onaylayınız.
+            </p>
+          </div>
+
+          {/* Social Auth Body Form */}
+          <form onSubmit={handleConfirmSocialLogin} className="p-6 space-y-4">
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-1">
+              <span className="font-bold text-slate-700 block">Doğrulama ve Onay Adımı:</span>
+              <p className="text-slate-500 text-[11px]">
+                Bu adım otomatik girişi engellemek için eklenmiştir. Aşağıdaki hesap bilgilerinizi kontrol edip onaylayarak giriş yapabilirsiniz.
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-rose-600" />
+                <span>Ad Soyad</span>
+              </label>
+              <input
+                type="text"
+                value={socialName}
+                onChange={(e) => setSocialName(e.target.value)}
+                placeholder="Ad Soyad"
+                className="w-full px-3.5 py-2.5 bg-slate-50 text-xs font-medium border border-slate-200 rounded-xl outline-none focus:border-rose-500 focus:bg-white transition-all"
+                required
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-rose-600" />
+                <span>{socialProvider} E-posta Adresi</span>
+              </label>
+              <input
+                type="email"
+                value={socialEmail}
+                onChange={(e) => setSocialEmail(e.target.value)}
+                placeholder="ornek@email.com"
+                disabled={socialProvider === 'Apple' && hideAppleEmail}
+                className="w-full px-3.5 py-2.5 bg-slate-50 text-xs font-medium border border-slate-200 rounded-xl outline-none focus:border-rose-500 focus:bg-white transition-all disabled:opacity-60"
+                required={!hideAppleEmail}
+              />
+            </div>
+
+            {socialProvider === 'Apple' && (
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                <span className="text-xs font-bold text-slate-800 block">Apple Gizlilik Tercihi:</span>
+                <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="applePrivacy"
+                    checked={!hideAppleEmail}
+                    onChange={() => setHideAppleEmail(false)}
+                    className="text-rose-600 focus:ring-rose-500"
+                  />
+                  <span>E-postamı Paylaş ({socialEmail})</span>
+                </label>
+                <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="applePrivacy"
+                    checked={hideAppleEmail}
+                    onChange={() => setHideAppleEmail(true)}
+                    className="text-rose-600 focus:ring-rose-500"
+                  />
+                  <span>E-postamı Gizle (Rastgele Özel E-posta Oluşturulur)</span>
+                </label>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setSocialProvider(null)}
+                className="flex-1 py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Vazgeç</span>
+              </button>
+
+              <button
+                type="submit"
+                className={`flex-1 py-2.5 px-3 font-bold text-xs text-white rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  socialProvider === 'Google'
+                    ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
+                    : 'bg-slate-900 hover:bg-slate-800 shadow-slate-300'
+                }`}
+              >
+                <span>Devam Et ve Giriş Yap</span>
+                <CheckCircle2 className="w-4 h-4" />
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
@@ -331,8 +497,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={() => handleSocialLogin('Google')}
-              className="py-2.5 px-3 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 transition-all flex items-center justify-center gap-2"
+              onClick={() => handleSocialClick('Google')}
+              className="py-2.5 px-3 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.2 9 5 12 5z"/>
@@ -345,8 +511,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             <button
               type="button"
-              onClick={() => handleSocialLogin('Apple')}
-              className="py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2"
+              onClick={() => handleSocialClick('Apple')}
+              className="py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                 <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.09c.67-.81 1.12-1.94.99-3.09-0.96.04-2.13.64-2.82 1.44-.61.71-1.15 1.86-1.01 2.99 1.08.08 2.17-.53 2.84-1.34z"/>
