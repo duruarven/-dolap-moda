@@ -24,7 +24,6 @@ const CATEGORIES = [
   { id: 'Kadın', label: 'Kadın', icon: '👗' },
   { id: 'Erkek', label: 'Erkek', icon: '👔' },
   { id: 'Çocuk', label: 'Çocuk', icon: '🧸' },
-  { id: 'Lüks', label: 'Lüks Moda', icon: '💎' },
   { id: 'Ayakkabı', label: 'Ayakkabı', icon: '👟' },
   { id: 'Çanta', label: 'Çanta', icon: '👜' },
   { id: 'Aksesuar', label: 'Aksesuar', icon: '👓' },
@@ -137,7 +136,7 @@ export const FeedView: React.FC = () => {
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
           {CATEGORIES.map(cat => (
             <button
               key={cat.id}

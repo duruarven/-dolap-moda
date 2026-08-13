@@ -28,6 +28,8 @@ import {
 } from 'lucide-react';
 import { OfferModal } from './OfferModal';
 import { CheckoutModal } from './CheckoutModal';
+import { KidsSizeChartModal } from './KidsSizeChartModal';
+import { Ruler } from 'lucide-react';
 
 export const ProductDetailView: React.FC = () => {
   const { 
@@ -49,6 +51,7 @@ export const ProductDetailView: React.FC = () => {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showSafetyTips, setShowSafetyTips] = useState(false);
+  const [showKidsSizeChart, setShowKidsSizeChart] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [commentText, setCommentText] = useState('');
 
@@ -254,9 +257,21 @@ export const ProductDetailView: React.FC = () => {
 
             {/* Specs Grid */}
             <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                <span className="text-slate-400 block text-[10px]">Beden / Ölçü</span>
-                <span className="font-bold text-slate-800">{selectedProduct.size}</span>
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col justify-between">
+                <div>
+                  <span className="text-slate-400 block text-[10px]">Beden / Ölçü</span>
+                  <span className="font-bold text-slate-800">{selectedProduct.size}</span>
+                </div>
+                {selectedProduct.category === 'Çocuk' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowKidsSizeChart(true)}
+                    className="mt-1 text-[10px] text-rose-600 hover:text-rose-700 font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Ruler className="w-3 h-3 text-rose-500" />
+                    <span>Ölçü Tablosu 📏</span>
+                  </button>
+                )}
               </div>
               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                 <span className="text-slate-400 block text-[10px]">Kullanım Durumu</span>
@@ -607,6 +622,12 @@ export const ProductDetailView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Kids Size Chart Modal */}
+      <KidsSizeChartModal
+        isOpen={showKidsSizeChart}
+        onClose={() => setShowKidsSizeChart(false)}
+      />
     </div>
   );
 };

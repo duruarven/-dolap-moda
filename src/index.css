@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Touch responsiveness & mobile optimization */
+html, body {
+  overflow-x: hidden;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}

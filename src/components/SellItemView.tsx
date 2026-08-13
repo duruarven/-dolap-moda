@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { ProductCondition, ShippingType } from '../types';
+import { KidsSizeChartModal } from './KidsSizeChartModal';
 import { 
   Camera, 
   Upload, 
@@ -14,12 +15,28 @@ import {
   X,
   Lock,
   Store,
-  LogIn
+  LogIn,
+  Ruler,
+  Baby
 } from 'lucide-react';
 
-const CATEGORIES = ['Kadın', 'Erkek', 'Çocuk', 'Lüks', 'Ayakkabı', 'Çanta', 'Aksesuar', 'Kozmetik', 'Ev & Yaşam'];
+const CATEGORIES = ['Kadın', 'Erkek', 'Çocuk', 'Ayakkabı', 'Çanta', 'Aksesuar', 'Kozmetik', 'Ev & Yaşam'];
 const BRANDS = ['Zara', 'Mango', 'Nike', 'Adidas', 'Gucci', 'LCW', 'Pull&Bear', 'Stradivarius', 'Bershka', 'Massimo Dutti', 'Vakko', 'Diğer'];
 const SIZES = ['XS (34)', 'S (36)', 'M (38)', 'L (40)', 'XL (42)', '36 (EU)', '37 (EU)', '38 (EU)', '39 (EU)', '40 (EU)', 'Standart'];
+const KIDS_SIZES = [
+  '0-3 Ay (56-62 cm)',
+  '3-6 Ay (62-68 cm)',
+  '6-12 Ay (68-80 cm)',
+  '12-18 Ay (80-86 cm)',
+  '18-24 Ay (86-92 cm)',
+  '2-3 Yaş (92-98 cm)',
+  '3-4 Yaş (98-104 cm)',
+  '4-5 Yaş (104-110 cm)',
+  '6-7 Yaş (116-122 cm)',
+  '8-9 Yaş (128-134 cm)',
+  '10-12 Yaş (140-152 cm)',
+  '13-14 Yaş (158-164 cm)'
+];
 
 export const SellItemView: React.FC = () => {
   const { currentUser, isLoggedIn, addProduct, addNotification, openBecomeSellerModal, openAuthModal } = useApp();
@@ -40,6 +57,7 @@ export const SellItemView: React.FC = () => {
   const [shippingType, setShippingType] = useState<ShippingType>('Kargo Bedava');
 
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
+  const [showKidsSizeChart, setShowKidsSizeChart] = useState(false);
 
   // Guard 1: Must be logged in
   if (!isLoggedIn) {
@@ -305,8 +323,16 @@ export const SellItemView: React.FC = () => {
               <select
                 id="sell-category-select"
                 value={category}
-                onChange={(e) => setCategory(e.target.value as any)}
-                className="w-full p-2.5 bg-slate-50 text-xs border border-slate-200 rounded-xl outline-none cursor-pointer"
+                onChange={(e) => {
+                  const newCat = e.target.value;
+                  setCategory(newCat as any);
+                  if (newCat === 'Çocuk' && !KIDS_SIZES.includes(size)) {
+                    setSize(KIDS_SIZES[5]); // '2-3 Yaş (92-98 cm)'
+                  } else if (newCat !== 'Çocuk' && KIDS_SIZES.includes(size)) {
+                    setSize(SIZES[1]); // 'S (36)'
+                  }
+                }}
+                className="w-full p-2.5 bg-slate-50 text-xs border border-slate-200 rounded-xl outline-none cursor-pointer font-medium"
               >
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -318,7 +344,7 @@ export const SellItemView: React.FC = () => {
                 id="sell-brand-select"
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
-                className="w-full p-2.5 bg-slate-50 text-xs border border-slate-200 rounded-xl outline-none cursor-pointer"
+                className="w-full p-2.5 bg-slate-50 text-xs border border-slate-200 rounded-xl outline-none cursor-pointer font-medium"
               >
                 {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
@@ -328,15 +354,35 @@ export const SellItemView: React.FC = () => {
           {/* Size & Condition */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 block">Beden / Ölçü</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-700 block">Beden / Ölçü</label>
+                {category === 'Çocuk' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowKidsSizeChart(true)}
+                    className="text-[11px] text-rose-600 hover:text-rose-700 font-bold flex items-center gap-1 cursor-pointer bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200/60"
+                  >
+                    <Ruler className="w-3 h-3 text-rose-500" />
+                    <span>Çocuk Beden Tablosu 📏</span>
+                  </button>
+                )}
+              </div>
               <select
                 id="sell-size-select"
                 value={size}
                 onChange={(e) => setSize(e.target.value)}
-                className="w-full p-2.5 bg-slate-50 text-xs border border-slate-200 rounded-xl outline-none cursor-pointer"
+                className="w-full p-2.5 bg-slate-50 text-xs border border-slate-200 rounded-xl outline-none cursor-pointer font-medium"
               >
-                {SIZES.map(s => <option key={s} value={s}>{s}</option>)}
+                {(category === 'Çocuk' ? KIDS_SIZES : SIZES).map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
               </select>
+              {category === 'Çocuk' && (
+                <p className="text-[10px] text-amber-700 bg-amber-50 p-1.5 rounded-lg flex items-center gap-1 mt-1 font-medium">
+                  <Baby className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>Emin değil misin? "Çocuk Beden Tablosu" butonuna tıklayarak ay ve boy ölçülerini inceleyebilirsin.</span>
+                </p>
+              )}
             </div>
 
             <div className="space-y-1">
@@ -439,6 +485,14 @@ export const SellItemView: React.FC = () => {
           <span>Dolabımda Yayınla • ₺{price}</span>
         </button>
       </form>
+
+      {/* Kids Size Chart Modal */}
+      <KidsSizeChartModal
+        isOpen={showKidsSizeChart}
+        onClose={() => setShowKidsSizeChart(false)}
+        onSelectSize={(selectedSize) => setSize(selectedSize)}
+        selectedSize={size}
+      />
     </div>
   );
 };
