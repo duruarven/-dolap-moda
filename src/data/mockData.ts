@@ -207,7 +207,22 @@ export const MOCK_ORDERS: Order[] = [
       { title: 'Hazırlanıyor', description: 'Satıcı kargoya teslim etti.', date: '06 Ağustos', completed: true },
       { title: 'Kargoya Verildi', description: 'Kargo şubesinden yola çıktı.', date: '07 Ağustos', completed: true },
       { title: 'Teslim Edildi', description: 'Teslim alındı ve alıcı tarafından onaylandı.', date: '08 Ağustos', completed: true }
-    ]
+    ],
+    review: {
+      id: 'rev_1',
+      orderId: 'ord_mock_3',
+      productId: 'prod_3',
+      productTitle: 'Mango İpek Karışımlı Desenli Elbise',
+      sellerId: 'seller_3',
+      sellerName: 'Zeynep A.',
+      buyerId: 'user_main',
+      buyerName: 'Kullanıcı',
+      buyerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
+      rating: 5,
+      comment: 'Harika bir elbise! Satıcı tam söylendiği gibi çok temiz paketlemişti. Kargo da ertesi gün ulaştı, çok teşekkürler! 💕',
+      tags: ['🚚 Hızlı Kargo', '📦 Özenli Paketleme', '✨ Açıklandığı Gibi'],
+      date: '09 Ağustos 2026'
+    }
   },
   {
     id: 'ord_mock_seller_1',
@@ -271,4 +286,50 @@ export const MOCK_ORDERS: Order[] = [
   }
 ];
 
-export const MOCK_REVIEWS: Review[] = [];
+export const MOCK_REVIEWS: Review[] = [
+  {
+    id: 'rev_1',
+    orderId: 'ord_mock_3',
+    productId: 'prod_3',
+    productTitle: 'Mango İpek Karışımlı Desenli Elbise',
+    sellerId: 'seller_3',
+    sellerName: 'Zeynep A.',
+    buyerId: 'user_main',
+    buyerName: 'Kullanıcı',
+    buyerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
+    rating: 5,
+    comment: 'Harika bir elbise! Satıcı tam söylendiği gibi çok temiz paketlemişti. Kargo da ertesi gün ulaştı, çok teşekkürler! 💕',
+    tags: ['🚚 Hızlı Kargo', '📦 Özenli Paketleme', '✨ Açıklandığı Gibi'],
+    date: '09 Ağustos 2026'
+  },
+  {
+    id: 'rev_2',
+    orderId: 'ord_mock_prev_1',
+    productId: 'prod_1',
+    productTitle: 'Zara Deri Ceket - S Beden',
+    sellerId: 'seller_1',
+    sellerName: 'Eda B.',
+    buyerId: 'buyer_demo_2',
+    buyerName: 'Selin Yılın',
+    buyerAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200',
+    rating: 5,
+    comment: 'Ceket resimlerden bile daha güzel! Sıfır gibi, koku vs yoktu. Güvenle alışveriş yapabilirsiniz.',
+    tags: ['✨ Açıklandığı Gibi', '👌 Temiz İkinci El', '😊 Güler Yüzlü Satıcı'],
+    date: '02 Ağustos 2026'
+  },
+  {
+    id: 'rev_3',
+    orderId: 'ord_mock_prev_2',
+    productId: 'prod_2',
+    productTitle: 'Nike Air Force 1 07 - 38 Beden',
+    sellerId: 'seller_2',
+    sellerName: 'Caner K.',
+    buyerId: 'buyer_demo_3',
+    buyerName: 'Merve Demir',
+    buyerAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200',
+    rating: 4,
+    comment: 'Ayakkabı orijinal ve kutusunda geldi. Sadece kargo kuryesi 1 gün gecikti ama satıcının ilgisi mükemmeldi.',
+    tags: ['💯 Harika Kalite', '😊 Güler Yüzlü Satıcı'],
+    date: '28 Temmuz 2026'
+  }
+];

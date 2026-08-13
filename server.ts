@@ -140,22 +140,34 @@ async function startServer() {
       `;
 
       if (transporter) {
-        // Real SMTP Delivery
-        await transporter.sendMail({
-          from: fromAddress,
-          to: email,
-          subject: `🔑 CepteModa E-Posta Onay Kodunuz: ${code}`,
-          html: emailHtml,
-        });
+        try {
+          // Real SMTP Delivery
+          await transporter.sendMail({
+            from: fromAddress,
+            to: email,
+            subject: `🔑 CepteModa E-Posta Onay Kodunuz: ${code}`,
+            html: emailHtml,
+          });
 
-        console.log(`[SMTP EMAIL SENT] Real email delivered to ${email} with code ${code}`);
-        return res.json({
-          success: true,
-          hashCode,
-          expiresAt,
-          smtpConfigured: true,
-          message: `${email} adresine doğrulama kodu başarıyla e-posta olarak gönderildi.`,
-        });
+          console.log(`[SMTP EMAIL SENT] Real email delivered to ${email} with code ${code}`);
+          return res.json({
+            success: true,
+            hashCode,
+            expiresAt,
+            smtpConfigured: true,
+            message: `${email} adresine doğrulama kodu başarıyla e-posta olarak gönderildi.`,
+          });
+        } catch (smtpError: any) {
+          console.warn(`[SMTP DELIVERY WARNING] SMTP authentication or sending failed (${smtpError.message}). Falling back to simulation mode.`);
+          return res.json({
+            success: true,
+            hashCode,
+            expiresAt,
+            smtpConfigured: false,
+            simulated: true,
+            message: `${email} adresine doğrulama e-postası tetiklendi (SMTP bağlantı uyarısı: Güvenli simülasyon modunda devam ediliyor).`,
+          });
+        }
       } else {
         // Fallback preview mode (Log to console & return hashed code for app state verification)
         console.log(`[SMTP SIMULATION MODE] Verification code generated for ${email}: ${code} (Configure SMTP_USER & SMTP_PASS in .env.example for live delivery)`);

@@ -8,9 +8,10 @@ import {
   ViewMode, 
   DeviceFrame,
   ProductCondition,
-  ShippingType
+  ShippingType,
+  Review
 } from '../types';
-import { MOCK_PRODUCTS, MOCK_USERS, MOCK_CONVERSATIONS, MOCK_MESSAGES, MOCK_ORDERS } from '../data/mockData';
+import { MOCK_PRODUCTS, MOCK_USERS, MOCK_CONVERSATIONS, MOCK_MESSAGES, MOCK_ORDERS, MOCK_REVIEWS } from '../data/mockData';
 
 interface NotificationToast {
   id: string;
@@ -79,10 +80,12 @@ interface AppContextType {
   sendOffer: (productId: string, offerAmount: number) => void;
   respondToOffer: (messageId: string, action: 'accept' | 'decline' | 'counter', counterAmount?: number) => void;
 
-  // Orders & Sales
+  // Orders, Reviews & Sales
   orders: Order[];
+  reviews: Review[];
   createOrder: (product: Product, address: string, courier: string) => Order;
   confirmOrderDelivery: (orderId: string) => void;
+  addReview: (orderId: string, rating: number, comment: string, tags?: string[]) => void;
 
   // Product Actions
   addProduct: (productData: Omit<Product, 'id' | 'seller' | 'createdAt' | 'favoriteCount' | 'likesCount' | 'commentsCount' | 'status'>) => void;
@@ -248,8 +251,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(MOCK_CONVERSATIONS[0]);
   const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES);
 
-  // Orders
+  // Orders & Reviews
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
+  const [reviews, setReviews] = useState<Review[]>(MOCK_REVIEWS);
 
   // Notifications
   const [notifications, setNotifications] = useState<NotificationToast[]>([]);
@@ -473,6 +477,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addNotification('Sipariş Onaylandı ✅', 'Ödeme satıcının cüzdanına aktarıldı. Teşekkür ederiz!', 'success');
   };
 
+  const addReview = (orderId: string, rating: number, comment: string, tags: string[] = []) => {
+    const targetOrder = orders.find(o => o.id === orderId);
+    if (!targetOrder) return;
+
+    const newReview: Review = {
+      id: `rev_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      orderId,
+      productId: targetOrder.productId,
+      productTitle: targetOrder.product.title,
+      productImage: targetOrder.product.images[0],
+      sellerId: targetOrder.sellerId,
+      sellerName: targetOrder.sellerName,
+      buyerId: currentUser.id,
+      buyerName: currentUser.name,
+      buyerAvatar: currentUser.avatar,
+      rating,
+      comment,
+      tags,
+      date: 'Bugün'
+    };
+
+    setReviews(prev => [newReview, ...prev]);
+
+    // Attach review to target order
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, review: newReview } : o));
+
+    addNotification('Değerlendirmeniz Yayınlandı! ⭐', 'Satıcı ve ürün için puanlama/yorumunuz eklendi.', 'success');
+  };
+
   const addProduct = (productData: Omit<Product, 'id' | 'seller' | 'createdAt' | 'favoriteCount' | 'likesCount' | 'commentsCount' | 'status'>) => {
     if (!isLoggedIn) {
       addNotification('Giriş Yapılmalı 🔒', 'Ürün yayınlamak için lütfen önce hesabınıza giriş yapın.', 'warning');
@@ -586,8 +619,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       sendOffer,
       respondToOffer,
       orders,
+      reviews,
       createOrder,
       confirmOrderDelivery,
+      addReview,
       addProduct,
       withdrawWalletBalance,
       notifications,

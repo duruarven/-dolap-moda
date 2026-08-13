@@ -119,15 +119,23 @@ export interface Order {
     date: string;
     completed: boolean;
   }[];
+  review?: Review;
 }
 
 export interface Review {
   id: string;
+  orderId?: string;
+  productId?: string;
+  productTitle?: string;
+  productImage?: string;
+  sellerId?: string;
+  sellerName?: string;
+  buyerId?: string;
   buyerName: string;
   buyerAvatar: string;
-  productTitle: string;
   rating: number;
   comment: string;
+  tags?: string[];
   date: string;
 }
 

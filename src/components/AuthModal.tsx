@@ -30,7 +30,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose, 
   initialMode = 'login' 
 }) => {
-  const { login, register, addNotification, openLegalModal } = useApp();
+  const { users, login, register, addNotification, openLegalModal } = useApp();
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
 
   // Form states
@@ -249,10 +249,48 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       ? `privaterelay_${Date.now()}@privaterelay.appleid.com`
       : socialEmail;
 
-    register(socialName, finalEmail, 'social_auth');
-    addNotification('Sosyal Giriş Yapıldı', `${socialProvider} hesabınız ile başarıyla giriş yapıldı.`, 'success');
-    setSocialProvider(null);
-    onClose();
+    const cleanEmail = finalEmail.toLowerCase().trim();
+    const userPrefix = cleanEmail.split('@')[0];
+
+    const existingUser = users.find(u => 
+      u.username.toLowerCase() === `@${userPrefix}` ||
+      u.username.toLowerCase().includes(userPrefix) || 
+      u.name.toLowerCase().includes(userPrefix)
+    );
+
+    if (mode === 'login') {
+      // Login mode: check if user account exists
+      if (existingUser) {
+        const success = login(finalEmail, 'social_auth');
+        if (success) {
+          setSocialProvider(null);
+          onClose();
+        }
+      } else {
+        // User account not found, DO NOT automatically register
+        addNotification(
+          'Hesap Bulunamadı! ⚠️',
+          `Bu ${socialProvider} adresi (${finalEmail}) ile kayıtlı bir üyelik bulunamadı. Lütfen "Üye Ol" sekmesinden yeni hesap oluşturunuz.`,
+          'warning'
+        );
+      }
+    } else {
+      // Register mode: check if user account already exists
+      if (existingUser) {
+        addNotification(
+          'Hesap Zaten Mevcut! ⚠️',
+          `Bu e-posta adresi (${finalEmail}) ile zaten bir üyelik var. Lütfen "Giriş Yap" sekmesine geçerek giriş yapınız.`,
+          'warning'
+        );
+        setMode('login');
+        setSocialProvider(null);
+      } else {
+        // Create new social account in register mode
+        register(socialName, finalEmail, 'social_auth');
+        setSocialProvider(null);
+        onClose();
+      }
+    }
   };
 
   if (isVerificationStep) {
@@ -513,7 +551,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     : 'bg-slate-900 hover:bg-slate-800 shadow-slate-300'
                 }`}
               >
-                <span>Devam Et ve Giriş Yap</span>
+                <span>{mode === 'login' ? 'Devam Et ve Giriş Yap' : 'Devam Et ve Üye Ol'}</span>
                 <CheckCircle2 className="w-4 h-4" />
               </button>
             </div>

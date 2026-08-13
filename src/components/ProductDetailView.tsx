@@ -24,12 +24,13 @@ import {
   ChevronUp,
   ShieldAlert,
   Lock,
-  AlertTriangle
+  AlertTriangle,
+  Star,
+  Ruler
 } from 'lucide-react';
 import { OfferModal } from './OfferModal';
 import { CheckoutModal } from './CheckoutModal';
 import { KidsSizeChartModal } from './KidsSizeChartModal';
-import { Ruler } from 'lucide-react';
 
 export const ProductDetailView: React.FC = () => {
   const { 
@@ -41,7 +42,8 @@ export const ProductDetailView: React.FC = () => {
     setActiveConversation,
     conversations,
     currentUser,
-    addNotification
+    addNotification,
+    reviews
   } = useApp();
 
   if (!selectedProduct) return null;
@@ -509,6 +511,108 @@ export const ProductDetailView: React.FC = () => {
           </button>
         </form>
       </div>
+
+      {/* Product & Seller Reviews Section */}
+      {(() => {
+        const sellerReviews = reviews.filter(
+          r => r.sellerId === selectedProduct.seller.id || r.productId === selectedProduct.id
+        );
+        const totalReviewsCount = sellerReviews.length;
+        const avgScore = totalReviewsCount > 0
+          ? (sellerReviews.reduce((acc, r) => acc + r.rating, 0) / totalReviewsCount).toFixed(1)
+          : selectedProduct.seller.rating.toFixed(1);
+
+        return (
+          <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+                  <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Satıcı Değerlendirmeleri & Yorumlar ({totalReviewsCount})
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    {selectedProduct.seller.name} satıcısının alıcılar tarafından yapılan yorumları
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <div className="flex items-center gap-1 justify-end">
+                  <span className="text-lg font-black text-slate-900">{avgScore}</span>
+                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                </div>
+                <span className="text-[10px] text-slate-400">5.0 üzerinden</span>
+              </div>
+            </div>
+
+            {/* Reviews List */}
+            {totalReviewsCount === 0 ? (
+              <div className="text-center py-6 bg-slate-50/60 rounded-2xl border border-dashed border-slate-200 space-y-2">
+                <Star className="w-8 h-8 text-slate-300 mx-auto" />
+                <p className="text-xs text-slate-600 font-bold">Henüz Değerlendirme Yapılmadı</p>
+                <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                  Bu ürünü veya satıcıyı değerlendirmek için teslim alınan bir siparişinizin olması gerekmektedir.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3.5 max-h-80 overflow-y-auto pr-1">
+                {sellerReviews.map((review) => (
+                  <div key={review.id} className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <img
+                          src={review.buyerAvatar}
+                          alt={review.buyerName}
+                          className="w-8 h-8 rounded-full object-cover border border-slate-200"
+                        />
+                        <div>
+                          <span className="font-bold text-slate-800 text-xs block">{review.buyerName}</span>
+                          <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                            <span>{review.date}</span>
+                            {review.productTitle && (
+                              <>
+                                <span>•</span>
+                                <span className="text-rose-600 font-medium truncate max-w-[140px]">{review.productTitle}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Rating Stars */}
+                      <div className="flex text-amber-400">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className={`w-3.5 h-3.5 ${s <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200 fill-slate-100'}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-700 leading-relaxed font-normal">
+                      {review.comment}
+                    </p>
+
+                    {review.tags && review.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {review.tags.map((tag, tIdx) => (
+                          <span key={tIdx} className="px-2 py-0.5 bg-white border border-slate-200 text-slate-700 rounded-md text-[10px] font-medium shadow-2xs">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Modals */}
       {showOfferModal && (
