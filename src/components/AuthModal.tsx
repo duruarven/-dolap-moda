@@ -149,12 +149,43 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   // Step 1: Initiate registration & send 6-digit email verification code
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName || !email || !password) {
-      addNotification('Hata', 'Lütfen zorunlu alanları doldurunuz.', 'warning');
+    const cleanName = fullName.trim();
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanName || cleanName.length < 3) {
+      addNotification('Geçersiz Ad Soyad ⚠️', 'Lütfen adınızı ve soyadınızı en az 3 karakter olarak giriniz.', 'warning');
       return;
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+      addNotification('Geçersiz E-Posta ⚠️', 'Lütfen geçerli bir e-posta adresi giriniz (örneğin: ad.soyad@gmail.com).', 'warning');
+      return;
+    }
+
+    if (!password || password.length < 4) {
+      addNotification('Zayıf Şifre ⚠️', 'Lütfen en az 4 karakterden oluşan bir şifre belirleyiniz.', 'warning');
+      return;
+    }
+
     if (!agreeTerms) {
       addNotification('Uyarı', 'Lütfen üyelik sözleşmesini onaylayınız.', 'warning');
+      return;
+    }
+
+    // Check if user account with this email already exists
+    const existingUser = users.find(u => 
+      (u.email && u.email.toLowerCase() === cleanEmail) ||
+      u.username.toLowerCase() === `@${cleanEmail.split('@')[0]}`
+    );
+
+    if (existingUser) {
+      addNotification(
+        'Hesap Zaten Mevcut! ⚠️',
+        `Bu e-posta adresi (${cleanEmail}) ile zaten bir üyelik var. Lütfen "Giriş Yap" sekmesine geçerek giriş yapınız.`,
+        'warning'
+      );
+      setMode('login');
       return;
     }
 
@@ -163,7 +194,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setVerificationInput('');
 
     // Trigger server SMTP API
-    await dispatchVerificationEmail(email, fullName);
+    await dispatchVerificationEmail(cleanEmail, cleanName);
   };
 
   // Resend code logic
@@ -231,7 +262,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setSocialProvider(provider);
     if (provider === 'Google') {
       setSocialName('Ferhat Çiçek');
-      setSocialEmail('ferhatcicek4734@gmail.com');
+      setSocialEmail('ceptemoda@ceptemoda.com');
     } else {
       setSocialName('Apple Kullanıcısı');
       setSocialEmail('user@icloud.com');
@@ -240,26 +271,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const handleConfirmSocialLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!socialEmail || !socialName) {
-      addNotification('Hata', 'Lütfen hesap e-posta ve isim bilgilerini doldurunuz.', 'warning');
+
+    const cleanName = socialName.trim();
+    let finalEmail = socialEmail.trim().toLowerCase();
+
+    if (socialProvider === 'Apple' && hideAppleEmail) {
+      finalEmail = `privaterelay_${Date.now()}@privaterelay.appleid.com`;
+    }
+
+    if (!cleanName || cleanName.length < 3) {
+      addNotification('Geçersiz Ad Soyad ⚠️', 'Lütfen adınızı ve soyadınızı en az 3 karakter olarak giriniz.', 'warning');
       return;
     }
 
-    const finalEmail = (socialProvider === 'Apple' && hideAppleEmail)
-      ? `privaterelay_${Date.now()}@privaterelay.appleid.com`
-      : socialEmail;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!finalEmail || !emailRegex.test(finalEmail)) {
+      addNotification('Geçersiz E-Posta ⚠️', 'Lütfen geçerli bir e-posta adresi giriniz (örneğin: ad.soyad@gmail.com).', 'warning');
+      return;
+    }
 
-    const cleanEmail = finalEmail.toLowerCase().trim();
-    const userPrefix = cleanEmail.split('@')[0];
-
+    // Exact email match or exact handle match lookup
+    const cleanPrefix = finalEmail.split('@')[0];
     const existingUser = users.find(u => 
-      u.username.toLowerCase() === `@${userPrefix}` ||
-      u.username.toLowerCase().includes(userPrefix) || 
-      u.name.toLowerCase().includes(userPrefix)
+      (u.email && u.email.toLowerCase() === finalEmail) ||
+      u.username.toLowerCase() === `@${cleanPrefix}`
     );
 
     if (mode === 'login') {
-      // Login mode: check if user account exists
+      // Login mode: must match an existing user account
       if (existingUser) {
         const success = login(finalEmail, 'social_auth');
         if (success) {
@@ -267,7 +306,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           onClose();
         }
       } else {
-        // User account not found, DO NOT automatically register
+        // User account not found: DO NOT register, DO NOT log in!
         addNotification(
           'Hesap Bulunamadı! ⚠️',
           `Bu ${socialProvider} adresi (${finalEmail}) ile kayıtlı bir üyelik bulunamadı. Lütfen "Üye Ol" sekmesinden yeni hesap oluşturunuz.`,
@@ -275,7 +314,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         );
       }
     } else {
-      // Register mode: check if user account already exists
+      // Register mode: must NOT be an already existing user
       if (existingUser) {
         addNotification(
           'Hesap Zaten Mevcut! ⚠️',
@@ -285,8 +324,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         setMode('login');
         setSocialProvider(null);
       } else {
-        // Create new social account in register mode
-        register(socialName, finalEmail, 'social_auth');
+        // Register brand new user account
+        register(cleanName, finalEmail, 'social_auth');
         setSocialProvider(null);
         onClose();
       }

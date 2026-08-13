@@ -4,6 +4,7 @@ export const MOCK_USERS: UserProfile[] = [
   {
     id: 'user_main',
     name: 'Kullanıcı',
+    email: 'ceptemoda@ceptemoda.com',
     username: '@kullanici_moda',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
     bio: 'İkinci el giyim ve aksesuar hesabı.',

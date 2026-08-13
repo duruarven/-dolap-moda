@@ -114,15 +114,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
-  const login = (email: string, pass: string): boolean => {
-    const cleanEmail = email.toLowerCase().trim();
-    const userPrefix = cleanEmail.split('@')[0];
-    
-    // Find user by exact email, username, or prefix match in registered users
+  const login = (emailOrUser: string, pass: string): boolean => {
+    const cleanInput = emailOrUser.toLowerCase().trim();
+    if (!cleanInput) return false;
+
+    // Find user by exact email OR exact username
     const matchedUser = users.find(u => 
-      u.username.toLowerCase() === `@${userPrefix}` ||
-      u.username.toLowerCase().includes(userPrefix) || 
-      u.name.toLowerCase().includes(userPrefix)
+      (u.email && u.email.toLowerCase() === cleanInput) ||
+      u.username.toLowerCase() === cleanInput ||
+      u.username.toLowerCase() === `@${cleanInput.replace(/^@/, '')}`
     );
 
     if (matchedUser) {
@@ -134,7 +134,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // User is not found in existing accounts
       addNotification(
         'Hesap Bulunamadı! ⚠️', 
-        'Bu e-posta adresiyle kayıtlı bir hesap bulunamadı. Lütfen "Üye Ol" sekmesinden yeni hesap oluşturunuz.', 
+        'Bu e-posta veya kullanıcı adıyla kayıtlı bir hesap bulunamadı. Lütfen "Üye Ol" sekmesinden yeni hesap oluşturunuz.', 
         'warning'
       );
       return false;
@@ -144,11 +144,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const register = (fullName: string, email: string, pass: string) => {
     const cleanName = fullName.trim();
     const cleanEmail = email.toLowerCase().trim();
+    if (!cleanName || !cleanEmail) return;
+
     const usernameHandle = `@${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
     
+    // Check if account already exists
+    const existing = users.find(u => 
+      (u.email && u.email.toLowerCase() === cleanEmail) ||
+      u.username.toLowerCase() === usernameHandle
+    );
+
+    if (existing) {
+      addNotification(
+        'Zaten Kayıtlı! ⚠️',
+        'Bu e-posta adresi ile zaten bir hesap mevcut. Lütfen "Giriş Yap" sekmesinden giriş yapınız.',
+        'warning'
+      );
+      return;
+    }
+
     const newUser: UserProfile = {
       id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       name: cleanName,
+      email: cleanEmail,
       username: usernameHandle,
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(cleanName)}`,
       bio: 'CepteModa üyesi! Yeni ürünler keşfetmeyi seviyor.',
