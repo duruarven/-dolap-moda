@@ -99,3 +99,8 @@ app.post('/api/auth/send-verification-email', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`CepteModa backend sunucusu ${PORT} portunda çalışıyor.`);
 });
+const authController = require('./authController');
+
+// Kayıt ve Giriş API Yolları
+app.post('/api/auth/register', authController.register);
+app.post('/api/auth/login', authController.login);
