@@ -1,0 +1,59 @@
+{
+  "entities": {
+    "users": {
+      "title": "users",
+      "description": "User account profiles",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "username": { "type": "string" },
+        "avatar": { "type": "string" },
+        "bio": { "type": "string" },
+        "rating": { "type": "number" },
+        "totalSales": { "type": "number" },
+        "activeListingsCount": { "type": "number" },
+        "followersCount": { "type": "number" },
+        "followingCount": { "type": "number" },
+        "walletBalance": { "type": "number" },
+        "pendingBalance": { "type": "number" },
+        "iban": { "type": "string" },
+        "isSuperSeller": { "type": "boolean" },
+        "isSeller": { "type": "boolean" },
+        "shopName": { "type": "string" },
+        "city": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending_verification", "active", "suspended"] },
+        "isEmailVerified": { "type": "boolean" },
+        "verifiedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "username"]
+    },
+    "products": {
+      "title": "products",
+      "description": "Fashion items for sale",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "originalPrice": { "type": "number" },
+        "category": { "type": "string" },
+        "subcategory": { "type": "string" },
+        "brand": { "type": "string" },
+        "size": { "type": "string" },
+        "condition": { "type": "string" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "seller": { "type": "object" },
+        "createdAt": { "type": "string" },
+        "favoriteCount": { "type": "number" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "title", "price", "seller"]
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

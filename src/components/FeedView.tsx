@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Product } from '../types';
+import { ProductCardSkeleton } from './skeletons/ProductCardSkeleton';
 import { 
   Heart, 
   Sparkles, 
@@ -15,7 +16,8 @@ import {
   ShoppingBag,
   SlidersHorizontal,
   Store,
-  PlusCircle
+  PlusCircle,
+  Landmark
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -49,6 +51,7 @@ export const FeedView: React.FC = () => {
     setFreeShippingOnly,
     sortBy,
     setSortBy,
+    isProductsLoading,
     setSelectedProduct,
     setViewMode,
     resetFilters,
@@ -226,7 +229,7 @@ export const FeedView: React.FC = () => {
       </div>
 
       {/* Clean Empty State with Become Seller & Post Item CTA */}
-      {filteredProducts.length === 0 && (
+      {!isProductsLoading && filteredProducts.length === 0 && (
         <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8 space-y-4 max-w-xl mx-auto shadow-2xs">
           <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-3xl flex items-center justify-center mx-auto text-2xl shadow-inner">
             <Store className="w-8 h-8 text-rose-600" />
@@ -262,9 +265,16 @@ export const FeedView: React.FC = () => {
         </div>
       )}
 
-      {/* Product Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
-        {filteredProducts.map(product => {
+      {/* Product Grid / Skeleton Loading */}
+      {isProductsLoading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+            <ProductCardSkeleton key={`feed-loading-skel-${n}`} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+          {filteredProducts.map(product => {
           const isFav = favorites.includes(product.id);
           const discountPercent = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
 
@@ -359,8 +369,20 @@ export const FeedView: React.FC = () => {
                 {/* Seller Bar */}
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
                   <div className="flex items-center gap-1.5 truncate">
-                    <img src={product.seller.avatar} alt={product.seller.name} className="w-4 h-4 rounded-full object-cover" />
+                    <div className="relative shrink-0">
+                      <img src={product.seller.avatar} alt={product.seller.name} className="w-4 h-4 rounded-full object-cover" />
+                      {product.seller.isEDevletVerified && (
+                        <span className="absolute -bottom-1 -right-1 bg-red-600 text-white rounded-full p-0.5 border border-white" title="e-Devlet Onaylı">
+                          <Landmark className="w-1.5 h-1.5" />
+                        </span>
+                      )}
+                    </div>
                     <span className="text-slate-600 truncate font-medium text-[10px]">{product.seller.name}</span>
+                    {product.seller.isEDevletVerified && (
+                      <span className="text-red-700 bg-red-50 text-[8px] font-black px-1 rounded border border-red-200 shrink-0">
+                        e-Devlet
+                      </span>
+                    )}
                     {product.seller.isSuperSeller && (
                       <Zap className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" title="Süper Satıcı" />
                     )}
@@ -374,7 +396,8 @@ export const FeedView: React.FC = () => {
             </motion.div>
           );
         })}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

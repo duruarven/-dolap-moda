@@ -13,10 +13,19 @@ import { ToastContainer } from './components/ToastContainer';
 import { BecomeSellerModal } from './components/BecomeSellerModal';
 import { AuthModal } from './components/AuthModal';
 import { LegalModal } from './components/LegalModal';
+import { 
+  FeedSkeleton, 
+  ProductDetailSkeleton, 
+  ProfileSkeleton, 
+  OrdersSkeleton, 
+  ChatSkeleton, 
+  AiAssistantSkeleton 
+} from './components/skeletons';
 
 const MainAppContent: React.FC = () => {
   const { 
     viewMode, 
+    isPageLoading,
     isBecomeSellerModalOpen, 
     closeBecomeSellerModal,
     isAuthModalOpen,
@@ -29,6 +38,27 @@ const MainAppContent: React.FC = () => {
   } = useApp();
 
   const renderActiveView = () => {
+    // Show high-fidelity Skeleton screens during view transitions & data loads
+    if (isPageLoading) {
+      switch (viewMode) {
+        case 'feed':
+        case 'favorites':
+          return <FeedSkeleton />;
+        case 'product_detail':
+          return <ProductDetailSkeleton />;
+        case 'profile':
+          return <ProfileSkeleton />;
+        case 'orders':
+          return <OrdersSkeleton />;
+        case 'chat':
+          return <ChatSkeleton />;
+        case 'ai_assistant':
+          return <AiAssistantSkeleton />;
+        default:
+          return <FeedSkeleton />;
+      }
+    }
+
     switch (viewMode) {
       case 'feed':
       case 'favorites':

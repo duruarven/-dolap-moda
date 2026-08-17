@@ -11,7 +11,7 @@ interface CheckoutModalProps {
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({ product, onClose }) => {
   const { createOrder, setViewMode, currentUser } = useApp();
 
-  const [address, setAddress] = useState('Atatürk Mahallesi, Karanfil Sokak No:12 D:4, Karşıyaka / İZMİR');
+  const [address, setAddress] = useState(currentUser.deliveryAddress || 'Atatürk Mahallesi, Karanfil Sokak No:12 D:4, Karşıyaka / İZMİR');
   const [courier, setCourier] = useState('Trendyol Express');
   const [paymentType, setPaymentType] = useState<'card' | 'balance'>('card');
   const [cardNumber, setCardNumber] = useState('4543 **** **** 8821');

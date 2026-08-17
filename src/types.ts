@@ -22,6 +22,10 @@ export interface Seller {
   rating: number;
   salesCount: number;
   isSuperSeller: boolean;
+  isEDevletVerified?: boolean;
+  eDevletVerifiedAt?: string;
+  sellerVerificationDocNo?: string;
+  tcKimlikMasked?: string;
   responseRate: string;
   city: string;
   followersCount: number;
@@ -146,6 +150,8 @@ export interface UserProfile {
   username: string;
   avatar: string;
   bio: string;
+  phone?: string;
+  deliveryAddress?: string;
   rating: number;
   totalSales: number;
   activeListingsCount: number;
@@ -158,4 +164,14 @@ export interface UserProfile {
   isSeller: boolean;
   shopName?: string;
   city?: string;
+  status?: 'pending_verification' | 'active' | 'suspended';
+  isEmailVerified?: boolean;
+  isVerified?: boolean;
+  verificationCode?: string;
+  verifiedAt?: string;
+  isEDevletVerified?: boolean;
+  eDevletVerifiedAt?: string;
+  tcKimlikMasked?: string;
+  sellerVerificationDocNo?: string;
+  sellerBadge?: 'verified_seller' | 'edevlet_seller' | 'super_seller';
 }

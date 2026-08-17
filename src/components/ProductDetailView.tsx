@@ -26,11 +26,14 @@ import {
   Lock,
   AlertTriangle,
   Star,
-  Ruler
+  Ruler,
+  Landmark,
+  BadgeCheck
 } from 'lucide-react';
 import { OfferModal } from './OfferModal';
 import { CheckoutModal } from './CheckoutModal';
 import { KidsSizeChartModal } from './KidsSizeChartModal';
+import { ProductDetailSkeleton } from './skeletons/ProductDetailSkeleton';
 
 export const ProductDetailView: React.FC = () => {
   const { 
@@ -46,7 +49,7 @@ export const ProductDetailView: React.FC = () => {
     reviews
   } = useApp();
 
-  if (!selectedProduct) return null;
+  if (!selectedProduct) return <ProductDetailSkeleton />;
 
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [showOfferModal, setShowOfferModal] = useState(false);
@@ -350,13 +353,22 @@ export const ProductDetailView: React.FC = () => {
                     alt={selectedProduct.seller.name}
                     className="w-10 h-10 rounded-full object-cover border border-rose-200"
                   />
-                  {selectedProduct.seller.isSuperSeller && (
+                  {selectedProduct.seller.isEDevletVerified ? (
+                    <span className="absolute -bottom-1 -right-1 bg-red-600 text-white rounded-full p-0.5 shadow-xs border border-white" title="e-Devlet Onaylı Satıcı">
+                      <Landmark className="w-3.5 h-3.5" />
+                    </span>
+                  ) : selectedProduct.seller.isSuperSeller ? (
                     <Zap className="w-4 h-4 text-amber-500 fill-amber-500 absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-xs" />
-                  )}
+                  ) : null}
                 </div>
                 <div>
-                  <div className="flex items-center gap-1 text-xs font-bold text-slate-800">
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs font-bold text-slate-800">
                     <span>{selectedProduct.seller.name}</span>
+                    {selectedProduct.seller.isEDevletVerified && (
+                      <span className="bg-red-50 text-red-700 border border-red-200 text-[9px] px-1.5 py-0.2 rounded font-black flex items-center gap-0.5">
+                        <Landmark className="w-2.5 h-2.5" /> e-Devlet Onaylı
+                      </span>
+                    )}
                     {selectedProduct.seller.isSuperSeller && (
                       <span className="bg-amber-100 text-amber-800 text-[9px] px-1.5 py-0.2 rounded font-bold">
                         SÜPER SATICI
@@ -373,7 +385,7 @@ export const ProductDetailView: React.FC = () => {
               <button
                 id="seller-profile-btn"
                 onClick={() => setViewMode('profile')}
-                className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl transition-colors"
+                className="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
               >
                 Dolabı Gör
               </button>
